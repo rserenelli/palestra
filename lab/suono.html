@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mini lab · Il suono che si vede</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap">
+<style>
+/* ===== Parte comune a tutti i mini lab (copiare uguale) ===== */
+:root {
+  --carta: #f4f6fa; --foglio: #ffffff; --inchiostro: #17223b; --tenue: #5a6680; --riga: #d5dbe8;
+  --accento: #1f4fd8; --accento-testo: #ffffff; --accento-soft: #e6ecfd;
+  --l1: #1c7c54; --l2: #b26a00; --l3: #a3264e; --l4: #6a3fb0; --oro: #c99a06;
+  --ok: #1c7c54; --ok-soft: #e2f3ea; --rosso: #c8102e; --rosso-soft: #fbe6e9;
+  --display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+  --testo: "Atkinson Hyperlegible", Verdana, system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --carta: #10151f; --foglio: #1a2130; --inchiostro: #e8ecf5; --tenue: #9aa6bf; --riga: #313b50;
+    --accento: #8fb0ff; --accento-testo: #0d1424; --accento-soft: #232f4d;
+    --l1: #5fd29c; --l2: #f0b24a; --l3: #f08aa9; --l4: #c3a4ff; --oro: #f5c84b;
+    --ok: #5fd29c; --ok-soft: #173326; --rosso: #ff6b7a; --rosso-soft: #3a1c22;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--carta); color: var(--inchiostro); font: 17px/1.5 var(--testo); }
+a { color: var(--accento); }
+:focus-visible { outline: 3px solid var(--accento); outline-offset: 2px; border-radius: 4px; }
+.barra { border-bottom: 1px solid var(--riga); background: var(--foglio); }
+.barra div { max-width: 720px; margin: 0 auto; padding: 10px 16px; display: flex; gap: 10px; align-items: center; font-size: 15px; }
+.barra a { text-decoration: none; font-weight: 700; }
+.barra .stelle { margin-left: auto; font-weight: 700; color: var(--oro); white-space: nowrap; }
+main { max-width: 720px; margin: 0 auto; padding: 14px 16px 60px; display: flex; flex-direction: column; gap: 14px; }
+h1 { font: 800 clamp(24px, 6vw, 32px)/1.15 var(--display); margin: 0; }
+h2 { font: 600 19px/1.2 var(--display); margin: 8px 0 0; }
+.sopra { color: var(--tenue); font-size: 15px; margin: 0; }
+.scena { position: relative; background: var(--foglio); border: 1px solid var(--riga); border-radius: 14px; overflow: hidden; }
+.scena canvas { display: block; width: 100%; height: min(62vw, 400px); touch-action: none; cursor: crosshair; }
+.scena .suggerimento { position: absolute; left: 10px; top: 8px; font-size: 13px; color: var(--tenue); pointer-events: none; }
+.scena .velocita { position: absolute; right: 10px; top: 8px; font-size: 13px; color: var(--tenue); pointer-events: none; }
+.pannello { background: var(--foglio); border: 1px solid var(--riga); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.riga { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--riga); border-radius: 999px; overflow: hidden; }
+.seg button { border: 0; background: none; color: inherit; font: inherit; font-size: 15px; padding: 7px 13px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accento); color: var(--accento-testo); font-weight: 700; }
+.interr { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; padding: 6px 10px; border: 1px solid var(--riga); border-radius: 999px; cursor: pointer; user-select: none; }
+.interr input { accent-color: var(--accento); width: 18px; height: 18px; margin: 0; }
+.cursore { display: grid; grid-template-columns: 104px 1fr 86px; gap: 10px; align-items: center; font-size: 15px; }
+.cursore input[type=range] { width: 100%; accent-color: var(--accento); height: 28px; }
+.cursore output { font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+.cursore.bloccato { opacity: .55; }
+.btn { border: 0; border-radius: 12px; background: var(--accento); color: var(--accento-testo); font: 700 18px var(--display); padding: 12px 18px; cursor: pointer; }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn.secondario { background: var(--accento-soft); color: var(--accento); font-size: 15px; padding: 8px 12px; }
+.btn.grande { width: 100%; }
+.misure { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; }
+.misure div { background: var(--carta); border-radius: 10px; padding: 8px 10px; }
+.misure small { display: block; color: var(--tenue); font-size: 13px; }
+.misure b { font: 700 19px var(--display); font-variant-numeric: tabular-nums; }
+details.formule summary { cursor: pointer; font-weight: 700; }
+.formule p { margin: 6px 0; font-variant-numeric: tabular-nums; }
+.formule .nota { color: var(--tenue); font-size: 14px; }
+.missione { border: 1px solid var(--riga); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: var(--foglio); }
+.missione.attiva { border: 2px solid var(--accento); }
+.missione.fatta .stella { color: var(--oro); }
+.missione h3 { margin: 0; font: 700 17px var(--display); display: flex; gap: 8px; align-items: baseline; }
+.missione h3 .stella { font-size: 20px; color: var(--riga); }
+.missione p { margin: 0; }
+.missione .corpo { display: none; flex-direction: column; gap: 8px; }
+.missione.attiva .corpo { display: flex; }
+.prova { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.prova input { font: inherit; font-size: 18px; width: 110px; padding: 8px 10px; border: 1px solid var(--riga); border-radius: 10px; background: var(--carta); color: inherit; }
+.esito { border-radius: 10px; padding: 10px 12px; font-size: 16px; }
+.esito.ok { background: var(--ok-soft); }
+.esito.no { background: var(--rosso-soft); }
+.esito:empty { display: none; }
+.medaglie { display: flex; gap: 8px; flex-wrap: wrap; }
+.medaglia { display: inline-flex; gap: 6px; align-items: center; font-size: 14px; padding: 5px 10px; border-radius: 999px; background: var(--carta); color: var(--tenue); }
+.medaglia.vinta { background: var(--accento-soft); color: var(--inchiostro); font-weight: 700; }
+.collegati { margin: 0; padding-left: 20px; }
+.collegati li { margin: 4px 0; }
+footer { max-width: 720px; margin: 0 auto; padding: 0 16px 30px; color: var(--tenue); font-size: 14px; }
+@media (max-width: 420px) { .cursore { grid-template-columns: 84px 1fr 80px; } }
+/* --- sfondo: quaderno a quadretti che sfuma e una luce colorata in alto --- */
+html { background: var(--carta); }
+body { background: transparent; position: relative; }
+body::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background-image:
+    radial-gradient(ellipse 70% 42% at 8% -6%, color-mix(in srgb, var(--accento) 16%, transparent), transparent 70%),
+    radial-gradient(ellipse 60% 38% at 100% 0%, color-mix(in srgb, var(--l4) 12%, transparent), transparent 70%),
+    linear-gradient(color-mix(in srgb, var(--accento) 9%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--accento) 9%, transparent) 1px, transparent 1px);
+  background-size: auto, auto, 22px 22px, 22px 22px;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0, rgba(0,0,0,.55) 45%, transparent 90%);
+          mask-image: linear-gradient(to bottom, #000 0, rgba(0,0,0,.55) 45%, transparent 90%); }
+.barra { background: color-mix(in srgb, var(--foglio) 82%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+/* --- la chicca: un'onda sottile che attraversa lo sfondo in alto --- */
+body::after { content: ""; position: fixed; left: 0; right: 0; top: 84px; height: 130px; z-index: -1; pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 60' preserveAspectRatio='none'%3E%3Cpolyline points='0,30.0 4,25.2 8,20.7 12,16.7 16,13.3 20,10.5 24,8.5 28,7.4 32,7.1 36,7.5 40,8.8 44,10.8 48,13.3 52,16.4 56,19.9 60,23.6 64,27.5 68,31.3 72,34.9 76,38.3 80,41.2 84,43.7 88,45.6 92,47.0 96,47.7 100,47.7 104,47.1 108,46.0 112,44.3 116,42.1 120,39.6 124,36.9 128,34.0 132,31.0 136,28.1 140,25.3 144,22.8 148,20.6 152,18.8 156,17.5 160,16.6 164,16.3 168,16.4 172,17.0 176,18.0 180,19.5 184,21.2 188,23.2 192,25.4 196,27.7 200,30.0 204,32.2 208,34.3 212,36.2 216,37.8 220,39.0 224,39.9 228,40.5 232,40.6 236,40.4 240,39.8 244,38.9 248,37.7 252,36.3 256,34.7 260,33.0 264,31.2 268,29.4 272,27.7 276,26.2 280,24.8 284,23.6 288,22.7 292,22.1 296,21.8 300,21.8 304,22.1 308,22.6 312,23.4 316,24.4 320,25.5 324,26.8 328,28.2 332,29.5 336,30.9 340,32.2 344,33.3 348,34.3 352,35.2 356,35.8 360,36.2 364,36.4 368,36.3 372,36.0 376,35.5 380,34.9 384,34.1 388,33.1 392,32.1 396,31.1 400,30.0' fill='none' stroke='%231f4fd8' stroke-opacity='.22' stroke-width='1.6' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E") no-repeat center / 100% 100%; opacity: .9; }
+@media (prefers-color-scheme: dark) { body::after { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 60' preserveAspectRatio='none'%3E%3Cpolyline points='0,30.0 4,25.2 8,20.7 12,16.7 16,13.3 20,10.5 24,8.5 28,7.4 32,7.1 36,7.5 40,8.8 44,10.8 48,13.3 52,16.4 56,19.9 60,23.6 64,27.5 68,31.3 72,34.9 76,38.3 80,41.2 84,43.7 88,45.6 92,47.0 96,47.7 100,47.7 104,47.1 108,46.0 112,44.3 116,42.1 120,39.6 124,36.9 128,34.0 132,31.0 136,28.1 140,25.3 144,22.8 148,20.6 152,18.8 156,17.5 160,16.6 164,16.3 168,16.4 172,17.0 176,18.0 180,19.5 184,21.2 188,23.2 192,25.4 196,27.7 200,30.0 204,32.2 208,34.3 212,36.2 216,37.8 220,39.0 224,39.9 228,40.5 232,40.6 236,40.4 240,39.8 244,38.9 248,37.7 252,36.3 256,34.7 260,33.0 264,31.2 268,29.4 272,27.7 276,26.2 280,24.8 284,23.6 288,22.7 292,22.1 296,21.8 300,21.8 304,22.1 308,22.6 312,23.4 316,24.4 320,25.5 324,26.8 328,28.2 332,29.5 336,30.9 340,32.2 344,33.3 348,34.3 352,35.2 356,35.8 360,36.2 364,36.4 368,36.3 372,36.0 376,35.5 380,34.9 384,34.1 388,33.1 392,32.1 396,31.1 400,30.0' fill='none' stroke='%238fb0ff' stroke-opacity='.22' stroke-width='1.6' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E"); opacity: .7; } }
+/* ===== fine parte comune ===== */
+.scena canvas { height: min(96vw, 460px); }
+.btn.ascolta { background: var(--l4); }
+.btn.ascolta[aria-pressed="true"] { background: var(--l3); }
+.scelte { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.scelte button { font: inherit; font-size: 18px; padding: 10px; border-radius: 10px; border: 1px solid var(--riga); background: var(--carta); color: inherit; cursor: pointer; }
+.nota-volume { font-size: 14px; color: var(--tenue); margin: 0; }
+</style>
+</head>
+<body>
+<header class="barra"><div>
+  <a href="../index.html#4f-fis-u1">← Palestra</a><span class="sopra">4F Fisica</span>
+  <span class="stelle" id="stelle"></span>
+</div></header>
+<main>
+  <div><p class="sopra">Mini lab · Onde e suono</p><h1>Il suono che si vede</h1></div>
+  <p class="sopra">In alto l'onda sonora nell'aria, vista in un istante e al rallentatore: i pallini sono le molecole d'aria che si addensano e si diradano. In basso quello che arriva all'orecchio nel tempo. Premi «Ascolta» per sentirlo davvero.</p>
+
+  <div class="scena"><canvas id="tela" aria-label="Onda sonora nello spazio e nel tempo"></canvas></div>
+
+  <div class="pannello">
+    <div class="riga"><button class="btn ascolta" id="ascolta" aria-pressed="false" style="flex:1">▶ Ascolta</button></div>
+    <p class="nota-volume">Abbassa il volume prima di premere. Con le cuffie si sentono meglio i battimenti.</p>
+    <div class="cursore" id="c-f1"><label for="f1">Frequenza</label><input type="range" id="f1" min="0" max="1000" step="1"><output id="o-f1"></output></div>
+    <label class="interr" style="align-self:flex-start"><input type="checkbox" id="due"> Aggiungi un secondo suono</label>
+    <div class="cursore" id="c-f2" hidden><label for="f2">Secondo suono</label><input type="range" id="f2" min="400" max="480" step="0.5"><output id="o-f2"></output></div>
+    <div class="misure" id="misure"></div>
+    <details class="formule"><summary>Le formule, con i numeri di adesso</summary><div id="formule"></div><p class="nota">Durante una missione prova prima a calcolare da solo.</p></details>
+  </div>
+
+  <h2>Missioni</h2><div id="missioni"></div>
+  <h2>Medaglie</h2><div class="medaglie" id="medaglie"></div>
+  <h2>Esercizi collegati</h2>
+  <ul class="collegati">
+    <li><a href="../index.html#4f-fis-u1-002">Il La del diapason</a>: la sua lunghezza d'onda.</li>
+    <li><a href="../index.html#4f-fis-u1-008">Due diapason a 440 e 444 Hz</a>: i battimenti.</li>
+    <li><a href="../index.html#4f-fis-u1-018">Accordare il violino con i battimenti</a></li>
+    <li><a href="../index.html#4f-fis-u1-005">Esercizio 5: il livello sonoro in decibel</a></li>
+  </ul>
+</main>
+<footer>Velocità del suono nell'aria: 340 m/s. Il moto nella scena è rallentato moltissimo: le lunghezze sono quelle vere. Le stelle restano solo su questo dispositivo.</footer>
+
+<script>
+(function () {
+  'use strict';
+  var CHIAVE = 'palestra-lab-suono', V = 340;
+  function $(id) { return document.getElementById(id); }
+  function fmt(x, d) { return (Math.round(x * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d).replace('.', ','); }
+  function leggiNumero(s) { var x = parseFloat(String(s).replace(',', '.').trim()); return isFinite(x) ? x : null; }
+  function col(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+  var salvati = { stelle: {}, medaglie: {} };
+  try { var s0 = JSON.parse(localStorage.getItem(CHIAVE)); if (s0 && s0.stelle) salvati = s0; } catch (e) {}
+  function salva() { try { localStorage.setItem(CHIAVE, JSON.stringify(salvati)); } catch (e) {} }
+
+  // cursore logaritmico 100–2000 Hz
+  function daCursore(k) { return Math.round(100 * Math.pow(20, k / 1000)); }
+  function aCursore(f) { return Math.round(1000 * Math.log(f / 100) / Math.log(20)); }
+  var st = { f1: 440, f2: 444, due: false };
+  var missione = null, nascostoF2 = false, particelle = [], risolto1 = false;
+  function lamNascosta() { return missione === 1 && !risolto1; }
+
+  // ---------- audio ----------
+  var ac = null, o1 = null, o2 = null, g1 = null, g2 = null, suona = false;
+  function avviaAudio() {
+    try {
+      if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+      if (ac.state === 'suspended') ac.resume();
+      o1 = ac.createOscillator(); g1 = ac.createGain(); o1.type = 'sine'; o1.frequency.value = st.f1; g1.gain.value = 0; o1.connect(g1).connect(ac.destination); o1.start();
+      o2 = ac.createOscillator(); g2 = ac.createGain(); o2.type = 'sine'; o2.frequency.value = st.f2; g2.gain.value = 0; o2.connect(g2).connect(ac.destination); o2.start();
+      suona = true; regolaAudio();
+    } catch (e) { suona = false; $('ascolta').textContent = 'Audio non disponibile'; }
+  }
+  function fermaAudio() {
+    if (!ac || !o1) return;
+    var t = ac.currentTime; g1.gain.setTargetAtTime(0, t, 0.03); g2.gain.setTargetAtTime(0, t, 0.03);
+    var a = o1, b = o2; setTimeout(function () { try { a.stop(); b.stop(); } catch (e) {} }, 200);
+    o1 = o2 = null; suona = false;
+  }
+  function regolaAudio() {
+    if (!suona || !o1) return;
+    var t = ac.currentTime;
+    o1.frequency.setTargetAtTime(st.f1, t, 0.02); o2.frequency.setTargetAtTime(st.f2, t, 0.02);
+    g1.gain.setTargetAtTime(0.12, t, 0.03); g2.gain.setTargetAtTime(st.due ? 0.12 : 0, t, 0.03);
+  }
+  $('ascolta').addEventListener('click', function () {
+    if (suona) { fermaAudio(); this.setAttribute('aria-pressed', 'false'); this.textContent = '▶ Ascolta'; }
+    else { avviaAudio(); if (suona) { this.setAttribute('aria-pressed', 'true'); this.textContent = '■ Stop'; } }
+  });
+  document.addEventListener('visibilitychange', function () { if (document.hidden && suona) $('ascolta').click(); });
+
+  // ---------- disegno ----------
+  var tela = $('tela'), ctx = tela.getContext('2d'), W = 0, Hc = 0;
+  function dimensiona() { var dpr = Math.min(window.devicePixelRatio || 1, 2.5), r = tela.getBoundingClientRect(); W = r.width; Hc = r.height; tela.width = Math.round(W * dpr); tela.height = Math.round(Hc * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+  var t0 = performance.now();
+  function disegna(ora) {
+    if (!W) return;
+    var t = (ora - t0) / 1000, ink = col('--inchiostro'), tenue = col('--tenue'), riga = col('--riga'), acc = col('--accento'), viola = col('--l4'), oro = col('--l2');
+    ctx.clearRect(0, 0, W, Hc); ctx.font = '12px ' + col('--testo');
+    // ---- pannello 1: lo spazio (3,4 m di aria)
+    var X0 = 16, X1 = W - 16, Lm = 3.4, sx = (X1 - X0) / Lm, yc = Hc * 0.2 + 14, A = Hc * 0.075;
+    var lam = V / st.f1, k = 2 * Math.PI / lam, fase = 2 * Math.PI * t / 1.6;   // al rallentatore: un periodo ogni 1,6 s
+    ctx.fillStyle = tenue; ctx.fillText('nello spazio, in un istante: la pressione dell\'aria', X0, 16);
+    ctx.strokeStyle = acc; ctx.lineWidth = 2.5; ctx.beginPath();
+    for (var px = X0; px <= X1; px += 1.5) { var x = (px - X0) / sx, y = Math.sin(k * x - fase); if (px === X0) ctx.moveTo(px, yc - A * y); else ctx.lineTo(px, yc - A * y); }
+    ctx.stroke();
+    // molecole d'aria: spostamento longitudinale
+    var yd = yc + A + 26, passo = 7;
+    ctx.fillStyle = ink;
+    for (var i = 0; X0 + i * passo <= X1; i++) {
+      var xe = i * passo / sx, s = Math.cos(k * xe - fase) * Math.min(passo * 0.45, lam * sx / 10);
+      for (var r = 0; r < 3; r++) { ctx.globalAlpha = 0.75; ctx.beginPath(); ctx.arc(X0 + i * passo + s, yd + r * 8, 1.7, 0, 2 * Math.PI); ctx.fill(); }
+    }
+    ctx.globalAlpha = 1;
+    // righello in metri
+    var yr = yd + 32; ctx.strokeStyle = ink; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(X0, yr); ctx.lineTo(X1, yr); ctx.stroke();
+    ctx.textAlign = 'center'; ctx.fillStyle = tenue;
+    for (var m = 0; m <= 3; m++) { ctx.fillRect(X0 + m * sx, yr - 4, 1, 8); ctx.fillText(m + ' m', X0 + m * sx + (m === 0 ? 10 : 0), yr + 16); }
+    // lunghezza d'onda tra due creste
+    var xc = ((Math.PI / 2 + fase) / k) % lam; if (xc < 0) xc += lam;
+    if (xc + lam <= Lm) {
+      var a1 = X0 + xc * sx, a2 = X0 + (xc + lam) * sx, yl = yc - A - 12;
+      ctx.strokeStyle = oro; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(a1, yl + 5); ctx.lineTo(a1, yl); ctx.lineTo(a2, yl); ctx.lineTo(a2, yl + 5); ctx.stroke();
+      ctx.fillStyle = oro; ctx.font = '700 13px ' + col('--testo'); ctx.fillText(lamNascosta() ? 'λ = ?' : 'λ = ' + fmt(lam, 2) + ' m', Math.max(50, Math.min(W - 50, (a1 + a2) / 2)), yl - 5);
+    } else { ctx.fillStyle = oro; ctx.font = '700 13px ' + col('--testo'); ctx.fillText('λ = ' + fmt(lam, 2) + ' m (più lunga della scena)', W / 2, yc - A - 16); }
+    // ---- pannello 2: il tempo, all'orecchio
+    var top = yr + 40, H2 = Hc - top - 26, ym = top + H2 / 2, A2 = H2 * 0.4;
+    ctx.strokeStyle = riga; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(X0, ym); ctx.lineTo(X1, ym); ctx.stroke();
+    ctx.textAlign = 'left'; ctx.font = '12px ' + col('--testo'); ctx.fillStyle = tenue;
+    if (!st.due) {
+      var fin = 0.01; // 10 ms
+      ctx.fillText('all\'orecchio: 10 millesimi di secondo', X0, top - 6);
+      ctx.strokeStyle = viola; ctx.lineWidth = 2; ctx.beginPath();
+      for (px = X0; px <= X1; px += 1) { var tt = (px - X0) / (X1 - X0) * fin, yy = Math.sin(2 * Math.PI * st.f1 * tt); if (px === X0) ctx.moveTo(px, ym - A2 * yy); else ctx.lineTo(px, ym - A2 * yy); }
+      ctx.stroke();
+      // un periodo evidenziato
+      var T = 1 / st.f1, pT = T / fin * (X1 - X0);
+      if (pT < X1 - X0) { ctx.strokeStyle = oro; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(X0, ym + A2 + 8); ctx.lineTo(X0 + pT, ym + A2 + 8); ctx.stroke(); ctx.fillStyle = oro; ctx.font = '700 12px ' + col('--testo'); ctx.fillText('T = ' + fmt(T * 1000, 2) + ' ms', X0 + Math.max(0, pT / 2 - 30), ym + A2 + 22); }
+    } else {
+      var df = Math.abs(st.f1 - st.f2), fin2 = 2; // 2 secondi
+      ctx.fillText('all\'orecchio: 2 secondi, i due suoni insieme', X0, top - 6);
+      ctx.fillStyle = viola; ctx.globalAlpha = 0.35; ctx.beginPath();
+      for (px = X0; px <= X1; px += 1) { tt = (px - X0) / (X1 - X0) * fin2; var inv = Math.abs(Math.cos(Math.PI * df * tt)); ctx.rect(px, ym - A2 * inv, 1, 2 * A2 * inv); }
+      ctx.fill(); ctx.globalAlpha = 1;
+      ctx.strokeStyle = viola; ctx.lineWidth = 2; ctx.beginPath();
+      for (px = X0; px <= X1; px += 1) { tt = (px - X0) / (X1 - X0) * fin2; inv = Math.abs(Math.cos(Math.PI * df * tt)); if (px === X0) ctx.moveTo(px, ym - A2 * inv); else ctx.lineTo(px, ym - A2 * inv); }
+      ctx.stroke();
+      // cursore che scorre al ritmo vero
+      var tc = (t % fin2) / fin2 * (X1 - X0) + X0; ctx.strokeStyle = ink; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(tc, top); ctx.lineTo(tc, top + H2); ctx.stroke();
+      ctx.textAlign = 'center'; ctx.fillStyle = tenue;
+      for (var sc = 0; sc <= 2; sc++) ctx.fillText(sc + ' s', X0 + sc / 2 * (X1 - X0) - (sc === 2 ? 8 : 0) + (sc === 0 ? 8 : 0), top + H2 + 16);
+    }
+    ctx.textAlign = 'left';
+    particelle.forEach(function (p) { p.x += p.vx; p.y += p.vy; p.vy += 0.25; p.vita -= 0.015; ctx.globalAlpha = Math.max(0, p.vita); ctx.fillStyle = p.c; ctx.fillRect(p.x, p.y, 6, 6); });
+    particelle = particelle.filter(function (p) { return p.vita > 0; }); ctx.globalAlpha = 1;
+  }
+  function ciclo(ora) { disegna(ora); requestAnimationFrame(ciclo); }
+
+  // ---------- comandi ----------
+  function aggiorna() {
+    $('f1').value = aCursore(st.f1); $('f2').value = st.f2; $('due').checked = st.due; $('c-f2').hidden = !st.due;
+    $('o-f1').textContent = st.f1 + ' Hz'; $('o-f2').textContent = nascostoF2 ? '? Hz' : fmt(st.f2, 1) + ' Hz';
+    var bl1 = missione === 1 || missione === 2; $('f1').disabled = bl1; $('c-f1').classList.toggle('bloccato', bl1);
+    $('due').disabled = missione === 2;
+    var lam = V / st.f1;
+    $('misure').innerHTML = cella('frequenza', st.f1 + ' Hz') + cella('periodo', fmt(1000 / st.f1, 2) + ' ms') + (lamNascosta() ? '' : cella('lunghezza d\'onda', fmt(lam, 2) + ' m')) +
+      (st.due ? cella('battimenti', nascostoF2 ? '? al secondo' : fmt(Math.abs(st.f1 - st.f2), 1) + ' al secondo') : '');
+    $('formule').innerHTML = '<p>λ = <i>v</i> / <i>f</i> = 340 / ' + st.f1 + ' = <b>' + fmt(lam, 3) + ' m</b></p><p><i>T</i> = 1 / <i>f</i> = <b>' + fmt(1000 / st.f1, 3) + ' ms</b></p>' +
+      (st.due && !nascostoF2 ? '<p><i>f</i><sub>b</sub> = |<i>f</i><sub>1</sub> − <i>f</i><sub>2</sub>| = |' + st.f1 + ' − ' + fmt(st.f2, 1) + '| = <b>' + fmt(Math.abs(st.f1 - st.f2), 1) + ' Hz</b></p>' : '');
+    regolaAudio();
+  }
+  function cella(n, v) { return '<div><small>' + n + '</small><b>' + v + '</b></div>'; }
+  $('f1').addEventListener('input', function () { st.f1 = daCursore(+this.value); aggiorna(); });
+  $('f2').addEventListener('input', function () { st.f2 = +this.value; aggiorna(); controlla2(); });
+  $('due').addEventListener('change', function () { st.due = this.checked; if (st.due && Math.abs(st.f2 - st.f1) > 40) st.f2 = Math.max(400, Math.min(480, st.f1 + 4)); aggiorna(); });
+
+  // ---------- missioni ----------
+  var MISSIONI = [
+    { n: 1, titolo: 'Quanto è lungo un La?',
+      testo: 'Il La del diapason vibra a 440 Hz. Quanto è lunga la sua onda nell\'aria? Calcolala, scrivila e confrontala con il righello nella scena.',
+      corpo: '<div class="prova"><input id="m1-in" inputmode="decimal" placeholder="metri" aria-label="Lunghezza d\'onda in metri"><button class="btn" id="m1-vai">Controlla</button></div>' },
+    { n: 2, titolo: 'Accorda il violino',
+      testo: 'Il diapason suona il La a 440 Hz. Il violino è un po\' scordato e non sai di quanto. Ascolta (o guarda) i battimenti e muovi il cursore del secondo suono finché spariscono. Se vuoi, prima conta quanti battimenti ci sono in un secondo.',
+      corpo: '<div class="prova"><input id="m2-in" inputmode="decimal" placeholder="battimenti/s" aria-label="Battimenti al secondo"><button class="btn secondario" id="m2-conta">Ho contato</button></div>' },
+    { n: 3, titolo: 'Due casse invece di una',
+      testo: 'Una cassa produce 80 dB nel punto in cui sei. Accendi accanto una seconda cassa identica. Che livello sonoro senti adesso?',
+      corpo: '<div class="scelte" id="m3-scelte"><button data-r="160">160 dB</button><button data-r="90">90 dB</button><button data-r="83">83 dB</button><button data-r="80">80 dB</button></div>' }
+  ];
+  var MEDAGLIE = [
+    { id: 'orecchio', nome: 'Orecchio fino', come: 'conta giusti i battimenti prima di accordare' },
+    { id: 'acuto', nome: 'Pipistrello', come: 'porta la frequenza oltre 1500 Hz e guarda quanto si accorcia l\'onda' },
+    { id: 'tutte', nome: 'Acustico', come: 'completa le tre missioni' }
+  ];
+  var risposto3 = false, accordato = false;
+  function disegnaMissioni() {
+    var vecchio = missione != null && $('es-' + missione) ? { c: $('es-' + missione).className, h: $('es-' + missione).innerHTML } : null;
+    $('missioni').innerHTML = MISSIONI.map(function (m) {
+      var fatta = !!salvati.stelle[m.n], attiva = missione === m.n;
+      return '<section class="missione' + (attiva ? ' attiva' : '') + (fatta ? ' fatta' : '') + '" id="mis-' + m.n + '"><h3><span class="stella">★</span>' + m.n + '. ' + m.titolo + '</h3><p>' + m.testo + '</p>' +
+        '<div class="corpo">' + m.corpo + '<div class="esito" id="es-' + m.n + '" role="status"></div></div>' +
+        '<div><button class="btn secondario" data-m="' + m.n + '">' + (attiva ? 'Esci dalla missione' : (fatta ? 'Rifai' : 'Inizia')) + '</button></div></section>';
+    }).join('');
+    if (vecchio) { var e = $('es-' + missione); e.className = vecchio.c; e.innerHTML = vecchio.h; }
+    $('stelle').textContent = '★ ' + Object.keys(salvati.stelle).length + '/3';
+    $('medaglie').innerHTML = MEDAGLIE.map(function (m) { var v = !!salvati.medaglie[m.id]; return '<span class="medaglia' + (v ? ' vinta' : '') + '">' + (v ? '🏅' : '○') + ' ' + m.nome + (v ? '' : ': ' + m.come) + '</span>'; }).join('');
+    if ($('m1-vai')) $('m1-vai').onclick = prova1;
+    if ($('m2-conta')) $('m2-conta').onclick = conta2;
+    if ($('m3-scelte')) $('m3-scelte').onclick = prova3;
+  }
+  function esito(n, html, ok) { var e = $('es-' + n); if (e) { e.className = 'esito ' + (ok ? 'ok' : 'no'); e.innerHTML = html; } }
+  function festa() { var cs = ['--oro', '--accento', '--l3', '--l1', '--l4'].map(col); for (var i = 0; i < 70; i++) particelle.push({ x: W / 2, y: Hc * 0.3, vx: (Math.random() - 0.5) * 9, vy: -Math.random() * 8 - 2, vita: 1, c: cs[i % cs.length] }); }
+  function premia(id) { if (!salvati.medaglie[id]) { salvati.medaglie[id] = true; salva(); disegnaMissioni(); } }
+  function stella(n) { salvati.stelle[n] = true; if (salvati.stelle[1] && salvati.stelle[2] && salvati.stelle[3]) salvati.medaglie.tutte = true; salva(); festa(); disegnaMissioni(); }
+  $('f1').addEventListener('change', function () { if (st.f1 > 1500) premia('acuto'); });
+  $('missioni').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-m]'); if (!b) return;
+    var n = +b.dataset.m;
+    if (missione === n) { missione = null; nascostoF2 = false; disegnaMissioni(); aggiorna(); return; }
+    missione = n; risposto3 = false; accordato = false; nascostoF2 = false; risolto1 = false;
+    if (n === 1) { st.f1 = 440; st.due = false; }
+    if (n === 2) { st.f1 = 440; st.due = true; var d = 3 + Math.floor(Math.random() * 4); st.f2 = 440 + (Math.random() < 0.5 ? -d : d); nascostoF2 = true; }
+    disegnaMissioni(); aggiorna();
+    tela.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  function prova1() {
+    var l = leggiNumero($('m1-in').value); if (l == null || l <= 0) { esito(1, 'Scrivi un numero in metri.', false); return; }
+    var giusto = V / 440, ok = Math.abs(l - giusto) / giusto <= 0.03;
+    if (ok) { risolto1 = true; aggiorna(); esito(1, '<b>Giusto!</b> λ = 340 / 440 ≈ 0,77 m: più o meno la lunghezza di un braccio. Guarda il righello: tra due creste ci sono proprio 77 cm. Le note gravi hanno onde lunghe metri, quelle acute pochi centimetri.', true); stella(1); }
+    else esito(1, 'Con ' + fmt(l, 2) + ' m non torna' + (l > 10 ? ': hai forse fatto 440 / 340, oppure moltiplicato?' : '.') + ' Indizio: <i>v</i> = λ<i>f</i>, quindi λ = <i>v</i> / <i>f</i>.', false);
+  }
+  var diffIniziale = null;
+  function conta2() {
+    if (missione !== 2) return;
+    var c = leggiNumero($('m2-in').value); if (c == null) { esito(2, 'Scrivi un numero.', false); return; }
+    var vero = Math.abs(st.f1 - st.f2);
+    if (Math.abs(c - vero) <= 0.6) { premia('orecchio'); esito(2, '<b>Contati bene:</b> ' + fmt(vero, 1) + ' battimenti al secondo, quindi il violino è scordato di ' + fmt(vero, 1) + ' Hz. Ora accordalo con il cursore.', true); }
+    else esito(2, 'Non sono ' + fmt(c, 1) + '. Guarda la fascia viola: in 2 secondi quanti «rigonfiamenti» ci sono? Dividi per 2.', false);
+  }
+  function controlla2() {
+    if (missione !== 2 || accordato) return;
+    var d = Math.abs(st.f1 - st.f2);
+    if (d <= 0.5) {
+      accordato = true; nascostoF2 = false; aggiorna();
+      esito(2, '<b>Accordato!</b> Il secondo suono è a ' + fmt(st.f2, 1) + ' Hz: i battimenti sono spariti, perché <i>f</i><sub>b</sub> = |<i>f</i><sub>1</sub> − <i>f</i><sub>2</sub>| è (quasi) zero. Più ti avvicini, più i battimenti rallentano: è così che si accordano gli strumenti.', true);
+      stella(2);
+    }
+  }
+  function prova3(e) {
+    var b = e.target.closest('button[data-r]'); if (!b || risposto3) return;
+    risposto3 = true; var ok = b.dataset.r === '83';
+    esito(3, (ok ? '<b>Esatto!</b> ' : 'No: 83 dB. ') + 'Due casse uguali danno il doppio dell\'<i>intensità</i>, non il doppio dei decibel: <i>L</i> = 80 + 10 log 2 ≈ 80 + 3 = 83 dB. Per arrivare a 90 dB servirebbero 10 casse.', ok);
+    if (ok) stella(3);
+  }
+
+  window.addEventListener('resize', dimensiona);
+  disegnaMissioni(); dimensiona(); aggiorna(); requestAnimationFrame(ciclo);
+})();
+</script>
+</body>
+</html>

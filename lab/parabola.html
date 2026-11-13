@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mini lab · La parabola e le soluzioni</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap">
+<style>
+/* ===== Parte comune a tutti i mini lab (copiare uguale) ===== */
+:root {
+  --carta: #f4f6fa; --foglio: #ffffff; --inchiostro: #17223b; --tenue: #5a6680; --riga: #d5dbe8;
+  --accento: #1f4fd8; --accento-testo: #ffffff; --accento-soft: #e6ecfd;
+  --l1: #1c7c54; --l2: #b26a00; --l3: #a3264e; --l4: #6a3fb0; --oro: #c99a06;
+  --ok: #1c7c54; --ok-soft: #e2f3ea; --rosso: #c8102e; --rosso-soft: #fbe6e9;
+  --display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+  --testo: "Atkinson Hyperlegible", Verdana, system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --carta: #10151f; --foglio: #1a2130; --inchiostro: #e8ecf5; --tenue: #9aa6bf; --riga: #313b50;
+    --accento: #8fb0ff; --accento-testo: #0d1424; --accento-soft: #232f4d;
+    --l1: #5fd29c; --l2: #f0b24a; --l3: #f08aa9; --l4: #c3a4ff; --oro: #f5c84b;
+    --ok: #5fd29c; --ok-soft: #173326; --rosso: #ff6b7a; --rosso-soft: #3a1c22;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--carta); color: var(--inchiostro); font: 17px/1.5 var(--testo); }
+a { color: var(--accento); }
+:focus-visible { outline: 3px solid var(--accento); outline-offset: 2px; border-radius: 4px; }
+.barra { border-bottom: 1px solid var(--riga); background: var(--foglio); }
+.barra div { max-width: 720px; margin: 0 auto; padding: 10px 16px; display: flex; gap: 10px; align-items: center; font-size: 15px; }
+.barra a { text-decoration: none; font-weight: 700; }
+.barra .stelle { margin-left: auto; font-weight: 700; color: var(--oro); white-space: nowrap; }
+main { max-width: 720px; margin: 0 auto; padding: 14px 16px 60px; display: flex; flex-direction: column; gap: 14px; }
+h1 { font: 800 clamp(24px, 6vw, 32px)/1.15 var(--display); margin: 0; }
+h2 { font: 600 19px/1.2 var(--display); margin: 8px 0 0; }
+.sopra { color: var(--tenue); font-size: 15px; margin: 0; }
+.scena { position: relative; background: var(--foglio); border: 1px solid var(--riga); border-radius: 14px; overflow: hidden; }
+.scena canvas { display: block; width: 100%; height: min(62vw, 400px); touch-action: none; cursor: crosshair; }
+.scena .suggerimento { position: absolute; left: 10px; top: 8px; font-size: 13px; color: var(--tenue); pointer-events: none; }
+.scena .velocita { position: absolute; right: 10px; top: 8px; font-size: 13px; color: var(--tenue); pointer-events: none; }
+.pannello { background: var(--foglio); border: 1px solid var(--riga); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.riga { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--riga); border-radius: 999px; overflow: hidden; }
+.seg button { border: 0; background: none; color: inherit; font: inherit; font-size: 15px; padding: 7px 13px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accento); color: var(--accento-testo); font-weight: 700; }
+.interr { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; padding: 6px 10px; border: 1px solid var(--riga); border-radius: 999px; cursor: pointer; user-select: none; }
+.interr input { accent-color: var(--accento); width: 18px; height: 18px; margin: 0; }
+.cursore { display: grid; grid-template-columns: 104px 1fr 86px; gap: 10px; align-items: center; font-size: 15px; }
+.cursore input[type=range] { width: 100%; accent-color: var(--accento); height: 28px; }
+.cursore output { font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+.cursore.bloccato { opacity: .55; }
+.btn { border: 0; border-radius: 12px; background: var(--accento); color: var(--accento-testo); font: 700 18px var(--display); padding: 12px 18px; cursor: pointer; }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn.secondario { background: var(--accento-soft); color: var(--accento); font-size: 15px; padding: 8px 12px; }
+.btn.grande { width: 100%; }
+.misure { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; }
+.misure div { background: var(--carta); border-radius: 10px; padding: 8px 10px; }
+.misure small { display: block; color: var(--tenue); font-size: 13px; }
+.misure b { font: 700 19px var(--display); font-variant-numeric: tabular-nums; }
+details.formule summary { cursor: pointer; font-weight: 700; }
+.formule p { margin: 6px 0; font-variant-numeric: tabular-nums; }
+.formule .nota { color: var(--tenue); font-size: 14px; }
+.missione { border: 1px solid var(--riga); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: var(--foglio); }
+.missione.attiva { border: 2px solid var(--accento); }
+.missione.fatta .stella { color: var(--oro); }
+.missione h3 { margin: 0; font: 700 17px var(--display); display: flex; gap: 8px; align-items: baseline; }
+.missione h3 .stella { font-size: 20px; color: var(--riga); }
+.missione p { margin: 0; }
+.missione .corpo { display: none; flex-direction: column; gap: 8px; }
+.missione.attiva .corpo { display: flex; }
+.prova { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.prova input { font: inherit; font-size: 18px; width: 110px; padding: 8px 10px; border: 1px solid var(--riga); border-radius: 10px; background: var(--carta); color: inherit; }
+.esito { border-radius: 10px; padding: 10px 12px; font-size: 16px; }
+.esito.ok { background: var(--ok-soft); }
+.esito.no { background: var(--rosso-soft); }
+.esito:empty { display: none; }
+.medaglie { display: flex; gap: 8px; flex-wrap: wrap; }
+.medaglia { display: inline-flex; gap: 6px; align-items: center; font-size: 14px; padding: 5px 10px; border-radius: 999px; background: var(--carta); color: var(--tenue); }
+.medaglia.vinta { background: var(--accento-soft); color: var(--inchiostro); font-weight: 700; }
+.collegati { margin: 0; padding-left: 20px; }
+.collegati li { margin: 4px 0; }
+footer { max-width: 720px; margin: 0 auto; padding: 0 16px 30px; color: var(--tenue); font-size: 14px; }
+@media (max-width: 420px) { .cursore { grid-template-columns: 84px 1fr 80px; } }
+/* --- sfondo: quaderno a quadretti che sfuma e una luce colorata in alto --- */
+html { background: var(--carta); }
+body { background: transparent; position: relative; }
+body::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background-image:
+    radial-gradient(ellipse 70% 42% at 8% -6%, color-mix(in srgb, var(--accento) 16%, transparent), transparent 70%),
+    radial-gradient(ellipse 60% 38% at 100% 0%, color-mix(in srgb, var(--l4) 12%, transparent), transparent 70%),
+    linear-gradient(color-mix(in srgb, var(--accento) 9%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--accento) 9%, transparent) 1px, transparent 1px);
+  background-size: auto, auto, 22px 22px, 22px 22px;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0, rgba(0,0,0,.55) 45%, transparent 90%);
+          mask-image: linear-gradient(to bottom, #000 0, rgba(0,0,0,.55) 45%, transparent 90%); }
+.barra { background: color-mix(in srgb, var(--foglio) 82%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+/* --- la chicca: un'onda sottile che attraversa lo sfondo in alto --- */
+body::after { content: ""; position: fixed; left: 0; right: 0; top: 84px; height: 130px; z-index: -1; pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 60' preserveAspectRatio='none'%3E%3Cpolyline points='0,30.0 4,25.2 8,20.7 12,16.7 16,13.3 20,10.5 24,8.5 28,7.4 32,7.1 36,7.5 40,8.8 44,10.8 48,13.3 52,16.4 56,19.9 60,23.6 64,27.5 68,31.3 72,34.9 76,38.3 80,41.2 84,43.7 88,45.6 92,47.0 96,47.7 100,47.7 104,47.1 108,46.0 112,44.3 116,42.1 120,39.6 124,36.9 128,34.0 132,31.0 136,28.1 140,25.3 144,22.8 148,20.6 152,18.8 156,17.5 160,16.6 164,16.3 168,16.4 172,17.0 176,18.0 180,19.5 184,21.2 188,23.2 192,25.4 196,27.7 200,30.0 204,32.2 208,34.3 212,36.2 216,37.8 220,39.0 224,39.9 228,40.5 232,40.6 236,40.4 240,39.8 244,38.9 248,37.7 252,36.3 256,34.7 260,33.0 264,31.2 268,29.4 272,27.7 276,26.2 280,24.8 284,23.6 288,22.7 292,22.1 296,21.8 300,21.8 304,22.1 308,22.6 312,23.4 316,24.4 320,25.5 324,26.8 328,28.2 332,29.5 336,30.9 340,32.2 344,33.3 348,34.3 352,35.2 356,35.8 360,36.2 364,36.4 368,36.3 372,36.0 376,35.5 380,34.9 384,34.1 388,33.1 392,32.1 396,31.1 400,30.0' fill='none' stroke='%231f4fd8' stroke-opacity='.22' stroke-width='1.6' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E") no-repeat center / 100% 100%; opacity: .9; }
+@media (prefers-color-scheme: dark) { body::after { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 60' preserveAspectRatio='none'%3E%3Cpolyline points='0,30.0 4,25.2 8,20.7 12,16.7 16,13.3 20,10.5 24,8.5 28,7.4 32,7.1 36,7.5 40,8.8 44,10.8 48,13.3 52,16.4 56,19.9 60,23.6 64,27.5 68,31.3 72,34.9 76,38.3 80,41.2 84,43.7 88,45.6 92,47.0 96,47.7 100,47.7 104,47.1 108,46.0 112,44.3 116,42.1 120,39.6 124,36.9 128,34.0 132,31.0 136,28.1 140,25.3 144,22.8 148,20.6 152,18.8 156,17.5 160,16.6 164,16.3 168,16.4 172,17.0 176,18.0 180,19.5 184,21.2 188,23.2 192,25.4 196,27.7 200,30.0 204,32.2 208,34.3 212,36.2 216,37.8 220,39.0 224,39.9 228,40.5 232,40.6 236,40.4 240,39.8 244,38.9 248,37.7 252,36.3 256,34.7 260,33.0 264,31.2 268,29.4 272,27.7 276,26.2 280,24.8 284,23.6 288,22.7 292,22.1 296,21.8 300,21.8 304,22.1 308,22.6 312,23.4 316,24.4 320,25.5 324,26.8 328,28.2 332,29.5 336,30.9 340,32.2 344,33.3 348,34.3 352,35.2 356,35.8 360,36.2 364,36.4 368,36.3 372,36.0 376,35.5 380,34.9 384,34.1 388,33.1 392,32.1 396,31.1 400,30.0' fill='none' stroke='%238fb0ff' stroke-opacity='.22' stroke-width='1.6' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E"); opacity: .7; } }
+/* ===== fine parte comune ===== */
+.scena canvas { height: min(92vw, 440px); cursor: grab; }
+.equazione { font: 700 22px var(--testo); font-variant-numeric: tabular-nums; }
+.delta { display: inline-block; padding: 4px 10px; border-radius: 999px; font-weight: 700; font-size: 15px; }
+.delta.pos { background: var(--ok-soft); color: var(--ok); }
+.delta.zero { background: var(--accento-soft); color: var(--accento); }
+.delta.neg { background: var(--rosso-soft); color: var(--rosso); }
+.prova input.corto { width: 80px; }
+</style>
+</head>
+<body>
+<header class="barra"><div>
+  <a href="../index.html#3i-mat-u2">← Palestra</a><span class="sopra">3I Matematica</span>
+  <span class="stelle" id="stelle"></span>
+</div></header>
+<main>
+  <div><p class="sopra">Mini lab · Equazioni di secondo grado</p><h1>Dove la curva tocca l'asse</h1></div>
+  <p class="sopra">Il disegno è il grafico di <i>y</i> = <i>ax</i>² + <i>bx</i> + <i>c</i>. Le soluzioni dell'equazione <i>ax</i>² + <i>bx</i> + <i>c</i> = 0 sono i punti in cui la curva incontra l'asse <i>x</i>. Muovi i cursori, trascina i pallini delle soluzioni o tira su e giù il vertice.</p>
+
+  <div class="pannello">
+    <div class="equazione" id="eq"></div>
+    <div><span class="delta" id="delta"></span></div>
+  </div>
+
+  <div class="scena">
+    <canvas id="tela" aria-label="Grafico della parabola: trascina le soluzioni o il vertice"></canvas>
+    <span class="suggerimento" id="sugg">Trascina le soluzioni o il vertice</span>
+  </div>
+
+  <div class="pannello">
+    <div class="cursore" id="c-a"><label for="a">a</label><input type="range" id="a" min="-3" max="3" step="0.5"><output id="o-a"></output></div>
+    <div class="cursore" id="c-b"><label for="b">b</label><input type="range" id="b" min="-10" max="10" step="0.5"><output id="o-b"></output></div>
+    <div class="cursore" id="c-c"><label for="c">c</label><input type="range" id="c" min="-10" max="10" step="0.5"><output id="o-c"></output></div>
+    <div class="misure" id="misure"></div>
+    <details class="formule"><summary>La formula risolutiva, con i numeri di adesso</summary><div id="formule"></div>
+      <p class="nota">Durante una missione prova prima a calcolare da solo.</p></details>
+  </div>
+
+  <h2>Missioni</h2><div id="missioni"></div>
+  <h2>Medaglie</h2><div class="medaglie" id="medaglie"></div>
+  <h2>Esercizi collegati</h2>
+  <ul class="collegati">
+    <li><a href="../index.html#3i-mat-u2-004">Esercizio 4: equazione completa</a></li>
+    <li><a href="../index.html#3i-mat-u2-006">Esercizio 6: il discriminante</a></li>
+    <li><a href="../index.html#3i-mat-u2-013">Il razzo del club di scienze</a>: quando il razzo tocca terra?</li>
+    <li><a href="../index.html#3i-mat-u2-021">Il tuffo dal trampolino</a></li>
+  </ul>
+</main>
+<footer>Il grafico mostra x e y tra −6 e 6 e tra −10 e 10. Le stelle restano solo su questo dispositivo.</footer>
+
+<script>
+(function () {
+  'use strict';
+  var CHIAVE = 'palestra-lab-parabola';
+  function $(id) { return document.getElementById(id); }
+  function fmt(x, d) { var r = (Math.round(x * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d).replace('.', ','); return r.replace(/^-/, '−'); }
+  function bello(x) { if (Math.abs(x - Math.round(x)) < 1e-9) return String(Math.round(x)).replace('-', '−'); return fmt(x, Math.abs(x * 100 - Math.round(x * 100)) < 1e-9 ? (Math.abs(x * 10 - Math.round(x * 10)) < 1e-9 ? 1 : 2) : 2); }
+  function leggiNumero(s) { var x = parseFloat(String(s).replace('−', '-').replace(',', '.').trim()); return isFinite(x) ? x : null; }
+  function col(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+  var salvati = { stelle: {}, medaglie: {} };
+  try { var s0 = JSON.parse(localStorage.getItem(CHIAVE)); if (s0 && s0.stelle) salvati = s0; } catch (e) {}
+  function salva() { try { localStorage.setItem(CHIAVE, JSON.stringify(salvati)); } catch (e) {} }
+
+  var st = { a: 1, b: -2, c: -3 };
+  var missione = null, particelle = [], nascosta = false;
+  function delta() { return st.b * st.b - 4 * st.a * st.c; }
+  function radici() {
+    var D = delta(); if (D < -1e-12) return [];
+    if (Math.abs(D) < 1e-12) return [-st.b / (2 * st.a)];
+    var r = Math.sqrt(D); return [(-st.b - r) / (2 * st.a), (-st.b + r) / (2 * st.a)].sort(function (x, y) { return x - y; });
+  }
+
+  function termine(k, s, primo) {
+    if (Math.abs(k) < 1e-12) return '';
+    var segno = k < 0 ? (primo ? '−' : ' − ') : (primo ? '' : ' + ');
+    var v = Math.abs(k), coeff = (v === 1 && s) ? '' : bello(v);
+    return segno + coeff + s;
+  }
+  function scriviEquazione() {
+    if (nascosta) { $('eq').innerHTML = '<i>x</i>² − 2<i>x</i> − 8 = 0'; $('delta').className = 'delta'; $('delta').textContent = 'Δ = ? (calcolalo tu)'; $('misure').innerHTML = ''; $('formule').innerHTML = '<p>Nascoste durante questa missione.</p>'; return; }
+    $('eq').innerHTML = termine(st.a, '<i>x</i>²', true) + termine(st.b, '<i>x</i>', false) + termine(st.c, '', false) + ' = 0';
+    var D = delta(), r = radici(), el = $('delta');
+    el.className = 'delta ' + (D > 1e-12 ? 'pos' : (D < -1e-12 ? 'neg' : 'zero'));
+    el.innerHTML = 'Δ = ' + bello(D) + (D > 1e-12 ? ' &gt; 0: due soluzioni distinte' : (D < -1e-12 ? ' &lt; 0: nessuna soluzione reale' : ' = 0: due soluzioni coincidenti'));
+    $('misure').innerHTML = cella('Δ = b² − 4ac', bello(D)) + (r.length ? r.map(function (x, i) { return cella(r.length === 1 ? 'x₁ = x₂' : 'x' + (i ? '₂' : '₁'), bello(x)); }).join('') : cella('soluzioni', 'nessuna'));
+    $('formule').innerHTML =
+      '<p>Δ = <i>b</i>² − 4<i>ac</i> = (' + bello(st.b) + ')² − 4 · (' + bello(st.a) + ') · (' + bello(st.c) + ') = <b>' + bello(D) + '</b></p>' +
+      (D >= -1e-12 ? '<p><i>x</i> = (−<i>b</i> ± √Δ) / (2<i>a</i>) = (' + bello(-st.b) + ' ± √' + bello(Math.max(0, D)) + ') / ' + bello(2 * st.a) + ' → <b>' + r.map(bello).join(' e ') + '</b></p>' : '<p>Δ è negativo: la radice quadrata non esiste tra i numeri reali, e la curva non tocca l\'asse <i>x</i>.</p>') +
+      (r.length ? '<p>Osserva: somma delle soluzioni = ' + bello(r.length === 1 ? 2 * r[0] : r[0] + r[1]) + ' = −<i>b</i>/<i>a</i>; prodotto = ' + bello(r.length === 1 ? r[0] * r[0] : r[0] * r[1]) + ' = <i>c</i>/<i>a</i>.</p>' : '');
+  }
+  function cella(n, v) { return '<div><small>' + n + '</small><b>' + v + '</b></div>'; }
+
+  // ---------- grafico ----------
+  var tela = $('tela'), ctx = tela.getContext('2d'), W = 0, Hc = 0, G = {};
+  function dimensiona() {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2.5), r = tela.getBoundingClientRect();
+    W = r.width; Hc = r.height; tela.width = Math.round(W * dpr); tela.height = Math.round(Hc * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    G = { cx: W / 2, cy: Hc / 2, sx: (W - 20) / 12.6, sy: (Hc - 20) / 21 };
+    disegna();
+  }
+  function PX(x) { return G.cx + x * G.sx; }
+  function PY(y) { return G.cy - y * G.sy; }
+  function XP(px) { return (px - G.cx) / G.sx; }
+  function YP(py) { return (G.cy - py) / G.sy; }
+  function vertice() { var xv = -st.b / (2 * st.a); return { x: xv, y: st.a * xv * xv + st.b * xv + st.c }; }
+  function disegna() {
+    if (!W) return;
+    var ink = col('--inchiostro'), tenue = col('--tenue'), riga = col('--riga'), acc = col('--accento'), ros = col('--l3'), ok = col('--ok');
+    ctx.clearRect(0, 0, W, Hc); ctx.font = '12px ' + col('--testo');
+    for (var x = -6; x <= 6; x++) { ctx.strokeStyle = riga; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(PX(x), 0); ctx.lineTo(PX(x), Hc); ctx.stroke(); }
+    for (var y = -10; y <= 10; y += 2) { ctx.beginPath(); ctx.moveTo(0, PY(y)); ctx.lineTo(W, PY(y)); ctx.stroke(); }
+    ctx.strokeStyle = ink; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(0, G.cy); ctx.lineTo(W, G.cy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(G.cx, 0); ctx.lineTo(G.cx, Hc); ctx.stroke();
+    ctx.fillStyle = tenue; ctx.textAlign = 'center';
+    for (x = -6; x <= 6; x += 2) if (x) ctx.fillText(String(x).replace('-', '−'), PX(x), G.cy + 16);
+    ctx.textAlign = 'right'; for (y = -10; y <= 10; y += 4) if (y) ctx.fillText(String(y).replace('-', '−'), G.cx - 5, PY(y) + 4);
+    ctx.textAlign = 'left';
+    if (nascosta) { ctx.fillStyle = tenue; ctx.textAlign = 'center'; ctx.font = '15px ' + col('--testo'); ctx.fillText('La curva appare quando hai risolto', W / 2, 30); ctx.textAlign = 'left'; disegnaFesta(); return; }
+    // parabola
+    ctx.strokeStyle = acc; ctx.lineWidth = 3; ctx.beginPath();
+    var primo = true;
+    for (var px = 0; px <= W; px += 2) { var X = XP(px), Y = st.a * X * X + st.b * X + st.c; if (Math.abs(Y) > 40) { primo = true; continue; } if (primo) { ctx.moveTo(px, PY(Y)); primo = false; } else ctx.lineTo(px, PY(Y)); }
+    ctx.stroke();
+    // vertice
+    var v = vertice();
+    if (Math.abs(v.y) < 11 && Math.abs(v.x) < 6.5) { ctx.fillStyle = ink; ctx.beginPath(); ctx.arc(PX(v.x), PY(v.y), 6, 0, 2 * Math.PI); ctx.fill(); ctx.fillStyle = tenue; ctx.fillText('vertice', PX(v.x) + 9, PY(v.y) + (st.a > 0 ? 16 : -8)); }
+    // soluzioni
+    radici().forEach(function (r) {
+      if (Math.abs(r) > 6.5) return;
+      ctx.fillStyle = ok; ctx.beginPath(); ctx.arc(PX(r), G.cy, 9, 0, 2 * Math.PI); ctx.fill();
+      ctx.fillStyle = ink; ctx.font = '700 13px ' + col('--testo'); ctx.textAlign = 'center'; ctx.fillText(bello(r), PX(r), G.cy - 14); ctx.textAlign = 'left'; ctx.font = '12px ' + col('--testo');
+    });
+    disegnaFesta();
+  }
+  function disegnaFesta() { particelle.forEach(function (p) { ctx.globalAlpha = Math.max(0, p.vita); ctx.fillStyle = p.c; ctx.fillRect(p.x, p.y, 6, 6); }); ctx.globalAlpha = 1; }
+  function aggiorna() {
+    $('a').value = st.a; $('b').value = st.b; $('c').value = st.c;
+    $('o-a').textContent = bello(st.a); $('o-b').textContent = bello(st.b); $('o-c').textContent = bello(st.c);
+    var bl = { a: missione === 1 || missione === 3, b: missione === 1 || missione === 2 || missione === 3, c: (missione === 1 && !libero) || missione === 2 || missione === 3 };
+    ['a', 'b', 'c'].forEach(function (k) { $(k).disabled = bl[k]; $('c-' + k).classList.toggle('bloccato', bl[k]); });
+    scriviEquazione(); disegna();
+    var D = delta();
+    if (Math.abs(D) < 1e-12 && st.a !== 1) premia('tangente');
+    if (st.a < 0 && D > 1e-12) premia('capovolta');
+  }
+  ['a', 'b', 'c'].forEach(function (k) {
+    $(k).addEventListener('input', function () { var v = +this.value; if (k === 'a' && v === 0) v = st.a > 0 ? -0.5 : 0.5; st[k] = v; aggiorna(); });
+  });
+
+  // ---------- trascinare soluzioni o vertice ----------
+  var presa = null;
+  function punto(ev) { var r = tela.getBoundingClientRect(); return { x: ev.clientX - r.left, y: ev.clientY - r.top }; }
+  tela.addEventListener('pointerdown', function (ev) {
+    if (missione) return;
+    var p = punto(ev), r = radici(), v = vertice(), best = null, dmin = 28;
+    r.forEach(function (x, i) { var d = Math.hypot(PX(x) - p.x, G.cy - p.y); if (d < dmin) { dmin = d; best = { tipo: 'radice', i: i, altra: r.length === 2 ? r[1 - i] : x }; } });
+    var dv = Math.hypot(PX(v.x) - p.x, PY(v.y) - p.y); if (dv < dmin) best = { tipo: 'vertice' };
+    if (!best) return;
+    presa = best; tela.setPointerCapture(ev.pointerId); tela.style.cursor = 'grabbing';
+  });
+  tela.addEventListener('pointermove', function (ev) {
+    if (!presa) return;
+    var p = punto(ev);
+    if (presa.tipo === 'radice') {
+      var x1 = Math.max(-6, Math.min(6, Math.round(XP(p.x) * 2) / 2)), x2 = presa.altra;
+      st.b = -st.a * (x1 + x2); st.c = st.a * x1 * x2;           // a(x − x₁)(x − x₂)
+    } else {
+      var yv = Math.round(YP(p.y) * 2) / 2, v = vertice();
+      st.c = Math.max(-30, Math.min(30, st.c + (yv - v.y)));
+    }
+    aggiorna();
+  });
+  function lascia() { presa = null; tela.style.cursor = ''; }
+  tela.addEventListener('pointerup', lascia); tela.addEventListener('pointercancel', lascia);
+
+  // ---------- missioni ----------
+  var MISSIONI = [
+    { n: 1, titolo: 'Fai sparire le soluzioni',
+      testo: 'Con <i>a</i> = 1 e <i>b</i> = 4, l\'equazione è <i>x</i>² + 4<i>x</i> + <i>c</i> = 0. Da quale valore di <i>c</i> in poi le soluzioni spariscono? Calcola il valore di confine e scrivilo.',
+      corpo: '<div class="prova"><input id="m1-in" inputmode="decimal" placeholder="c" aria-label="Valore di c"><button class="btn" id="m1-vai">Prova questo c</button></div>' },
+    { n: 2, titolo: 'Risolvi e controlla',
+      testo: 'Risolvi <i>x</i>² − 2<i>x</i> − 8 = 0 con la formula, scrivi le due soluzioni e guarda se la curva ti dà ragione.',
+      corpo: '<div class="prova"><input class="corto" id="m2-x1" inputmode="decimal" placeholder="x₁" aria-label="Prima soluzione"><input class="corto" id="m2-x2" inputmode="decimal" placeholder="x₂" aria-label="Seconda soluzione"><button class="btn" id="m2-vai">Controlla</button></div>' },
+    { n: 3, titolo: 'Costruisci l\'equazione',
+      testo: 'Con <i>a</i> = 1, quali devono essere <i>b</i> e <i>c</i> perché le soluzioni siano −3 e 1? Scrivili e guarda dove passa la curva.',
+      corpo: '<div class="prova"><input class="corto" id="m3-b" inputmode="decimal" placeholder="b" aria-label="b"><input class="corto" id="m3-c" inputmode="decimal" placeholder="c" aria-label="c"><button class="btn" id="m3-vai">Disegna</button></div>' }
+  ];
+  var MEDAGLIE = [
+    { id: 'tangente', nome: 'Sfiorata', come: 'con a diverso da 1, fai in modo che la curva tocchi l\'asse in un solo punto' },
+    { id: 'capovolta', nome: 'A testa in giù', come: 'con a negativo, ottieni due soluzioni' },
+    { id: 'tutte', nome: 'Risolutore', come: 'completa le tre missioni' }
+  ];
+  var tentativi = 0, libero = false;
+  function disegnaMissioni() {
+    var vecchio = missione != null && $('es-' + missione) ? { c: $('es-' + missione).className, h: $('es-' + missione).innerHTML } : null;
+    $('missioni').innerHTML = MISSIONI.map(function (m) {
+      var fatta = !!salvati.stelle[m.n], attiva = missione === m.n;
+      return '<section class="missione' + (attiva ? ' attiva' : '') + (fatta ? ' fatta' : '') + '" id="mis-' + m.n + '"><h3><span class="stella">★</span>' + m.n + '. ' + m.titolo + '</h3><p>' + m.testo + '</p>' +
+        '<div class="corpo">' + m.corpo + '<div class="esito" id="es-' + m.n + '" role="status"></div></div>' +
+        '<div><button class="btn secondario" data-m="' + m.n + '">' + (attiva ? 'Esci dalla missione' : (fatta ? 'Rifai' : 'Inizia')) + '</button></div></section>';
+    }).join('');
+    if (vecchio) { var e = $('es-' + missione); e.className = vecchio.c; e.innerHTML = vecchio.h; }
+    $('stelle').textContent = '★ ' + Object.keys(salvati.stelle).length + '/3';
+    $('medaglie').innerHTML = MEDAGLIE.map(function (m) { var v = !!salvati.medaglie[m.id]; return '<span class="medaglia' + (v ? ' vinta' : '') + '">' + (v ? '🏅' : '○') + ' ' + m.nome + (v ? '' : ': ' + m.come) + '</span>'; }).join('');
+    if ($('m1-vai')) $('m1-vai').onclick = prova1;
+    if ($('m2-vai')) $('m2-vai').onclick = prova2;
+    if ($('m3-vai')) $('m3-vai').onclick = prova3;
+  }
+  function esito(n, html, ok) { var e = $('es-' + n); if (e) { e.className = 'esito ' + (ok ? 'ok' : 'no'); e.innerHTML = html; } }
+  var animando = false;
+  function festa() { var cs = ['--oro', '--accento', '--l3', '--l1', '--l4'].map(col); for (var i = 0; i < 70; i++) particelle.push({ x: W / 2, y: Hc * 0.3, vx: (Math.random() - 0.5) * 9, vy: -Math.random() * 8 - 2, vita: 1, c: cs[i % cs.length] }); if (!animando) { animando = true; (function g() { particelle.forEach(function (p) { p.x += p.vx; p.y += p.vy; p.vy += 0.25; p.vita -= 0.015; }); particelle = particelle.filter(function (p) { return p.vita > 0; }); disegna(); if (particelle.length) requestAnimationFrame(g); else animando = false; })(); } }
+  function premia(id) { if (!salvati.medaglie[id]) { salvati.medaglie[id] = true; salva(); disegnaMissioni(); } }
+  function stella(n) { salvati.stelle[n] = true; if (salvati.stelle[1] && salvati.stelle[2] && salvati.stelle[3]) salvati.medaglie.tutte = true; salva(); festa(); disegnaMissioni(); }
+  $('missioni').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-m]'); if (!b) return;
+    var n = +b.dataset.m;
+    if (missione === n) { missione = null; nascosta = false; $('sugg').textContent = 'Trascina le soluzioni o il vertice'; disegnaMissioni(); aggiorna(); return; }
+    missione = n; tentativi = 0; libero = false; nascosta = n === 2;
+    if (n === 1) st = { a: 1, b: 4, c: 0 };
+    if (n === 2) st = { a: 1, b: -2, c: -8 };
+    if (n === 3) st = { a: 1, b: 0, c: 0 };
+    disegnaMissioni(); aggiorna();
+    $('sugg').textContent = 'Durante la missione si usano le caselle';
+  });
+  function prova1() {
+    var c = leggiNumero($('m1-in').value); if (c == null) { esito(1, 'Scrivi un numero.', false); return; }
+    tentativi++; st.c = c; aggiorna();
+    if (Math.abs(c - 4) < 1e-9) {
+      esito(1, '<b>Esatto: c = 4.</b> Con Δ = 16 − 4<i>c</i> = 0 la curva sfiora l\'asse in <i>x</i> = −2. Per <i>c</i> &gt; 4 il Δ è negativo e le soluzioni spariscono: prova con il cursore di <i>c</i> (adesso è libero).', true);
+      libero = true; stella(1); aggiorna();
+    } else {
+      esito(1, 'Con <i>c</i> = ' + bello(c) + ' il Δ vale ' + bello(delta()) + (delta() > 0 ? ': ci sono ancora due soluzioni.' : ': le soluzioni sono già sparite. Cerca il confine esatto.') + (tentativi >= 2 ? ' Indizio: il confine è quando Δ = <i>b</i>² − 4<i>ac</i> = 0.' : ''), false);
+    }
+  }
+  function prova2() {
+    var x1 = leggiNumero($('m2-x1').value), x2 = leggiNumero($('m2-x2').value);
+    if (x1 == null || x2 == null) { esito(2, 'Scrivi entrambe le soluzioni.', false); return; }
+    tentativi++; aggiorna();
+    var giuste = [-2, 4], prese = [x1, x2].filter(function (x) { return giuste.some(function (g) { return Math.abs(g - x) < 1e-6; }); });
+    if (prese.length === 2 && Math.abs(x1 - x2) > 1e-6) {
+      nascosta = false; aggiorna();
+      esito(2, '<b>Giuste!</b> Δ = 4 + 32 = 36, √Δ = 6, <i>x</i> = (2 ± 6) / 2 → −2 e 4. La curva taglia l\'asse proprio lì.', true); stella(2);
+    } else {
+      var val = function (x) { return x * x - 2 * x - 8; };
+      esito(2, 'Controllo sostituendo: ' + [x1, x2].map(function (x) { return 'con <i>x</i> = ' + bello(x) + ' il primo membro vale ' + bello(val(x)) + (Math.abs(val(x)) < 1e-9 ? ' ✓' : ', non 0'); }).join('; ') + '.' + (tentativi >= 2 ? ' Indizio: Δ = (−2)² − 4 · 1 · (−8) = 36.' : ''), false);
+    }
+  }
+  function prova3() {
+    var b = leggiNumero($('m3-b').value), c = leggiNumero($('m3-c').value);
+    if (b == null || c == null) { esito(3, 'Scrivi sia b sia c.', false); return; }
+    tentativi++; st.b = b; st.c = c; aggiorna();
+    if (b === 2 && c === -3) {
+      esito(3, '<b>Perfetto!</b> <i>x</i>² + 2<i>x</i> − 3 = (<i>x</i> + 3)(<i>x</i> − 1). La somma delle soluzioni è −3 + 1 = −2 = −<i>b</i>, il prodotto è −3 = <i>c</i>.', true); stella(3);
+    } else {
+      var r = radici();
+      esito(3, 'Con questi valori le soluzioni sono ' + (r.length ? r.map(bello).join(' e ') : 'nessuna') + '.' + (tentativi >= 2 ? ' Indizio: parti da (<i>x</i> + 3)(<i>x</i> − 1) = 0 e svolgi il prodotto.' : ' Riprova.'), false);
+    }
+  }
+
+  window.addEventListener('resize', dimensiona);
+  disegnaMissioni(); dimensiona(); aggiorna();
+})();
+</script>
+</body>
+</html>

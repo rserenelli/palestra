@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mini lab · Il cannone</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap">
+<style>
+/* ===== Parte comune a tutti i mini lab (copiare uguale) ===== */
+:root {
+  --carta: #f4f6fa; --foglio: #ffffff; --inchiostro: #17223b; --tenue: #5a6680; --riga: #d5dbe8;
+  --accento: #1f4fd8; --accento-testo: #ffffff; --accento-soft: #e6ecfd;
+  --l1: #1c7c54; --l2: #b26a00; --l3: #a3264e; --l4: #6a3fb0; --oro: #c99a06;
+  --ok: #1c7c54; --ok-soft: #e2f3ea; --rosso: #c8102e; --rosso-soft: #fbe6e9;
+  --display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+  --testo: "Atkinson Hyperlegible", Verdana, system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --carta: #10151f; --foglio: #1a2130; --inchiostro: #e8ecf5; --tenue: #9aa6bf; --riga: #313b50;
+    --accento: #8fb0ff; --accento-testo: #0d1424; --accento-soft: #232f4d;
+    --l1: #5fd29c; --l2: #f0b24a; --l3: #f08aa9; --l4: #c3a4ff; --oro: #f5c84b;
+    --ok: #5fd29c; --ok-soft: #173326; --rosso: #ff6b7a; --rosso-soft: #3a1c22;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--carta); color: var(--inchiostro); font: 17px/1.5 var(--testo); }
+a { color: var(--accento); }
+:focus-visible { outline: 3px solid var(--accento); outline-offset: 2px; border-radius: 4px; }
+.barra { border-bottom: 1px solid var(--riga); background: var(--foglio); }
+.barra div { max-width: 720px; margin: 0 auto; padding: 10px 16px; display: flex; gap: 10px; align-items: center; font-size: 15px; }
+.barra a { text-decoration: none; font-weight: 700; }
+.barra .stelle { margin-left: auto; font-weight: 700; color: var(--oro); white-space: nowrap; }
+main { max-width: 720px; margin: 0 auto; padding: 14px 16px 60px; display: flex; flex-direction: column; gap: 14px; }
+h1 { font: 800 clamp(24px, 6vw, 32px)/1.15 var(--display); margin: 0; }
+h2 { font: 600 19px/1.2 var(--display); margin: 8px 0 0; }
+.sopra { color: var(--tenue); font-size: 15px; margin: 0; }
+.scena { position: relative; background: var(--foglio); border: 1px solid var(--riga); border-radius: 14px; overflow: hidden; }
+.scena canvas { display: block; width: 100%; height: min(62vw, 400px); touch-action: none; cursor: crosshair; }
+.scena .suggerimento { position: absolute; left: 10px; top: 8px; font-size: 13px; color: var(--tenue); pointer-events: none; }
+.scena .velocita { position: absolute; right: 10px; top: 8px; font-size: 13px; color: var(--tenue); pointer-events: none; }
+.pannello { background: var(--foglio); border: 1px solid var(--riga); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.riga { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--riga); border-radius: 999px; overflow: hidden; }
+.seg button { border: 0; background: none; color: inherit; font: inherit; font-size: 15px; padding: 7px 13px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accento); color: var(--accento-testo); font-weight: 700; }
+.interr { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; padding: 6px 10px; border: 1px solid var(--riga); border-radius: 999px; cursor: pointer; user-select: none; }
+.interr input { accent-color: var(--accento); width: 18px; height: 18px; margin: 0; }
+.cursore { display: grid; grid-template-columns: 104px 1fr 86px; gap: 10px; align-items: center; font-size: 15px; }
+.cursore input[type=range] { width: 100%; accent-color: var(--accento); height: 28px; }
+.cursore output { font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+.cursore.bloccato { opacity: .55; }
+.btn { border: 0; border-radius: 12px; background: var(--accento); color: var(--accento-testo); font: 700 18px var(--display); padding: 12px 18px; cursor: pointer; }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn.secondario { background: var(--accento-soft); color: var(--accento); font-size: 15px; padding: 8px 12px; }
+.btn.grande { width: 100%; }
+.misure { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; }
+.misure div { background: var(--carta); border-radius: 10px; padding: 8px 10px; }
+.misure small { display: block; color: var(--tenue); font-size: 13px; }
+.misure b { font: 700 19px var(--display); font-variant-numeric: tabular-nums; }
+details.formule summary { cursor: pointer; font-weight: 700; }
+.formule p { margin: 6px 0; font-variant-numeric: tabular-nums; }
+.formule .nota { color: var(--tenue); font-size: 14px; }
+.missione { border: 1px solid var(--riga); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: var(--foglio); }
+.missione.attiva { border: 2px solid var(--accento); }
+.missione.fatta .stella { color: var(--oro); }
+.missione h3 { margin: 0; font: 700 17px var(--display); display: flex; gap: 8px; align-items: baseline; }
+.missione h3 .stella { font-size: 20px; color: var(--riga); }
+.missione p { margin: 0; }
+.missione .corpo { display: none; flex-direction: column; gap: 8px; }
+.missione.attiva .corpo { display: flex; }
+.prova { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.prova input { font: inherit; font-size: 18px; width: 110px; padding: 8px 10px; border: 1px solid var(--riga); border-radius: 10px; background: var(--carta); color: inherit; }
+.esito { border-radius: 10px; padding: 10px 12px; font-size: 16px; }
+.esito.ok { background: var(--ok-soft); }
+.esito.no { background: var(--rosso-soft); }
+.esito:empty { display: none; }
+.medaglie { display: flex; gap: 8px; flex-wrap: wrap; }
+.medaglia { display: inline-flex; gap: 6px; align-items: center; font-size: 14px; padding: 5px 10px; border-radius: 999px; background: var(--carta); color: var(--tenue); }
+.medaglia.vinta { background: var(--accento-soft); color: var(--inchiostro); font-weight: 700; }
+.collegati { margin: 0; padding-left: 20px; }
+.collegati li { margin: 4px 0; }
+footer { max-width: 720px; margin: 0 auto; padding: 0 16px 30px; color: var(--tenue); font-size: 14px; }
+@media (max-width: 420px) { .cursore { grid-template-columns: 84px 1fr 80px; } }
+/* --- sfondo: quaderno a quadretti che sfuma e una luce colorata in alto --- */
+html { background: var(--carta); }
+body { background: transparent; position: relative; }
+body::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background-image:
+    radial-gradient(ellipse 70% 42% at 8% -6%, color-mix(in srgb, var(--accento) 16%, transparent), transparent 70%),
+    radial-gradient(ellipse 60% 38% at 100% 0%, color-mix(in srgb, var(--l4) 12%, transparent), transparent 70%),
+    linear-gradient(color-mix(in srgb, var(--accento) 9%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--accento) 9%, transparent) 1px, transparent 1px);
+  background-size: auto, auto, 22px 22px, 22px 22px;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0, rgba(0,0,0,.55) 45%, transparent 90%);
+          mask-image: linear-gradient(to bottom, #000 0, rgba(0,0,0,.55) 45%, transparent 90%); }
+.barra { background: color-mix(in srgb, var(--foglio) 82%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+/* --- la chicca: un'onda sottile che attraversa lo sfondo in alto --- */
+body::after { content: ""; position: fixed; left: 0; right: 0; top: 84px; height: 130px; z-index: -1; pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 60' preserveAspectRatio='none'%3E%3Cpolyline points='0,30.0 4,25.2 8,20.7 12,16.7 16,13.3 20,10.5 24,8.5 28,7.4 32,7.1 36,7.5 40,8.8 44,10.8 48,13.3 52,16.4 56,19.9 60,23.6 64,27.5 68,31.3 72,34.9 76,38.3 80,41.2 84,43.7 88,45.6 92,47.0 96,47.7 100,47.7 104,47.1 108,46.0 112,44.3 116,42.1 120,39.6 124,36.9 128,34.0 132,31.0 136,28.1 140,25.3 144,22.8 148,20.6 152,18.8 156,17.5 160,16.6 164,16.3 168,16.4 172,17.0 176,18.0 180,19.5 184,21.2 188,23.2 192,25.4 196,27.7 200,30.0 204,32.2 208,34.3 212,36.2 216,37.8 220,39.0 224,39.9 228,40.5 232,40.6 236,40.4 240,39.8 244,38.9 248,37.7 252,36.3 256,34.7 260,33.0 264,31.2 268,29.4 272,27.7 276,26.2 280,24.8 284,23.6 288,22.7 292,22.1 296,21.8 300,21.8 304,22.1 308,22.6 312,23.4 316,24.4 320,25.5 324,26.8 328,28.2 332,29.5 336,30.9 340,32.2 344,33.3 348,34.3 352,35.2 356,35.8 360,36.2 364,36.4 368,36.3 372,36.0 376,35.5 380,34.9 384,34.1 388,33.1 392,32.1 396,31.1 400,30.0' fill='none' stroke='%231f4fd8' stroke-opacity='.22' stroke-width='1.6' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E") no-repeat center / 100% 100%; opacity: .9; }
+@media (prefers-color-scheme: dark) { body::after { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 60' preserveAspectRatio='none'%3E%3Cpolyline points='0,30.0 4,25.2 8,20.7 12,16.7 16,13.3 20,10.5 24,8.5 28,7.4 32,7.1 36,7.5 40,8.8 44,10.8 48,13.3 52,16.4 56,19.9 60,23.6 64,27.5 68,31.3 72,34.9 76,38.3 80,41.2 84,43.7 88,45.6 92,47.0 96,47.7 100,47.7 104,47.1 108,46.0 112,44.3 116,42.1 120,39.6 124,36.9 128,34.0 132,31.0 136,28.1 140,25.3 144,22.8 148,20.6 152,18.8 156,17.5 160,16.6 164,16.3 168,16.4 172,17.0 176,18.0 180,19.5 184,21.2 188,23.2 192,25.4 196,27.7 200,30.0 204,32.2 208,34.3 212,36.2 216,37.8 220,39.0 224,39.9 228,40.5 232,40.6 236,40.4 240,39.8 244,38.9 248,37.7 252,36.3 256,34.7 260,33.0 264,31.2 268,29.4 272,27.7 276,26.2 280,24.8 284,23.6 288,22.7 292,22.1 296,21.8 300,21.8 304,22.1 308,22.6 312,23.4 316,24.4 320,25.5 324,26.8 328,28.2 332,29.5 336,30.9 340,32.2 344,33.3 348,34.3 352,35.2 356,35.8 360,36.2 364,36.4 368,36.3 372,36.0 376,35.5 380,34.9 384,34.1 388,33.1 392,32.1 396,31.1 400,30.0' fill='none' stroke='%238fb0ff' stroke-opacity='.22' stroke-width='1.6' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E"); opacity: .7; } }
+/* ===== fine parte comune ===== */
+</style>
+</head>
+<body>
+<header class="barra"><div>
+  <a href="../index.html#3c-fis-u1">← Palestra</a><span class="sopra">3C Fisica</span>
+  <span class="stelle" id="stelle" aria-label="Missioni completate"></span>
+</div></header>
+
+<main>
+  <div>
+    <p class="sopra">Mini lab</p>
+    <h1>Il cannone</h1>
+  </div>
+
+  <div class="scena">
+    <canvas id="tela" aria-label="Scena del lancio: trascina per scegliere direzione e velocità"></canvas>
+    <span class="suggerimento" id="sugg">Trascina per mirare</span>
+    <span class="velocita" id="ritmo"></span>
+  </div>
+
+  <div class="pannello">
+    <div class="riga">
+      <div class="seg" role="group" aria-label="Pianeta" id="pianeti"></div>
+    </div>
+    <div class="cursore" id="c-ang"><label for="ang">Angolo θ</label><input type="range" id="ang" min="1" max="89" step="1"><output id="o-ang"></output></div>
+    <div class="cursore" id="c-vel"><label for="vel">Velocità v₀</label><input type="range" id="vel" min="5" max="30" step="0.5"><output id="o-vel"></output></div>
+    <button class="btn grande" id="lancia">Lancia</button>
+    <div class="riga">
+      <label class="interr"><input type="checkbox" id="t-vett" checked> Vettori</label>
+      <label class="interr"><input type="checkbox" id="t-strobo" checked> Foto a intervalli</label>
+      <label class="interr"><input type="checkbox" id="t-lento"> Rallenta</label>
+      <button class="btn secondario" id="pulisci">Cancella i lanci</button>
+    </div>
+  </div>
+
+  <div class="pannello">
+    <b id="tit-misure">Mentre vola</b>
+    <div class="misure" id="misure"></div>
+    <details class="formule">
+      <summary>Le formule, con i numeri di adesso</summary>
+      <div id="formule"></div>
+      <p class="nota">Durante una missione prova prima a calcolare da solo: aprire qui è come guardare il risultato.</p>
+    </details>
+  </div>
+
+  <h2>Missioni</h2>
+  <div id="missioni"></div>
+
+  <h2>Medaglie</h2>
+  <div class="medaglie" id="medaglie"></div>
+
+  <h2>Esercizi collegati</h2>
+  <ul class="collegati">
+    <li><a href="../index.html#3c-fis-u1-014">Il salto del fiume</a>: la gittata cresce con il quadrato della velocità.</li>
+    <li><a href="../index.html#3c-fis-u1-028">Il lancio del peso</a>: 45° è davvero l'angolo migliore?</li>
+    <li><a href="../index.html#3c-fis-u1-029">Golf sulla Luna</a>: la stessa palla con un'altra g.</li>
+    <li><a href="../index.html#3c-fis-u1-015">Salto in lungo su Marte</a></li>
+  </ul>
+</main>
+<footer>Modello senza attrito dell'aria, lancio e arrivo alla stessa quota. Le stelle restano solo su questo dispositivo.</footer>
+
+<script>
+(function () {
+  'use strict';
+  // ---------- dati del lab ----------
+  var PIANETI = {
+    terra: { nome: 'Terra', g: 9.81, suolo: '#6b9a3f' },
+    luna:  { nome: 'Luna',  g: 1.62, suolo: '#9a9aa2' },
+    marte: { nome: 'Marte', g: 3.71, suolo: '#b5562f' }
+  };
+  var CHIAVE = 'palestra-lab-cannone';
+  var V_MISSIONE = 20;
+
+  // ---------- utilità comuni ----------
+  function $(id) { return document.getElementById(id); }
+  function fmt(x, d) { return (Math.round(x * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d).replace('.', ','); }
+  function leggiNumero(s) { var x = parseFloat(String(s).replace(',', '.').trim()); return isFinite(x) ? x : null; }
+  function col(nome) { return getComputedStyle(document.documentElement).getPropertyValue(nome).trim(); }
+  function rad(g) { return g * Math.PI / 180; }
+  var salvati = { stelle: {}, medaglie: {}, pianeti: {} };
+  try { var s = JSON.parse(localStorage.getItem(CHIAVE)); if (s && s.stelle) salvati = s; } catch (e) {}
+  function salva() { try { localStorage.setItem(CHIAVE, JSON.stringify(salvati)); } catch (e) {} }
+
+  // ---------- stato ----------
+  var st = { pianeta: 'terra', th: 40, v0: 20 };
+  var scie = [];          // lanci completati
+  var volo = null;        // lancio in corso
+  var coda = [];          // lanci in attesa (missione 3)
+  var vista = { R: 45, H: 10 };
+  var particelle = [];
+  var missione = null;    // 1, 2, 3 oppure null
+  var bersaglio = null;   // distanza in metri della bandierina
+
+  function traiettoria(g, v0, thGradi) {
+    var t = rad(thGradi), vx = v0 * Math.cos(t), vy = v0 * Math.sin(t), T = 2 * vy / g;
+    return { g: g, v0: v0, th: thGradi, vx: vx, vy: vy, T: T, R: vx * T, H: vy * vy / (2 * g) };
+  }
+  function posizione(tr, t) { return { x: tr.vx * t, y: tr.vy * t - 0.5 * tr.g * t * t, vy: tr.vy - tr.g * t }; }
+  function passoStrobo(T) {
+    var c = [0.05, 0.1, 0.2, 0.25, 0.5, 1, 2, 5], obiettivo = T / 10;
+    for (var i = 0; i < c.length; i++) if (c[i] >= obiettivo) return c[i];
+    return 10;
+  }
+
+  // ---------- disegno ----------
+  var tela = $('tela'), ctx = tela.getContext('2d'), W = 0, Hc = 0, dpr = 1;
+  var MARG = { s: 34, d: 18, su: 26, giu: 34 };
+  function dimensiona() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    var r = tela.getBoundingClientRect();
+    W = r.width; Hc = r.height;
+    tela.width = Math.round(W * dpr); tela.height = Math.round(Hc * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    disegna();
+  }
+  function scala() { return Math.min((W - MARG.s - MARG.d) / vista.R, (Hc - MARG.su - MARG.giu) / vista.H); }
+  function px(x) { return MARG.s + x * scala(); }
+  function py(y) { return Hc - MARG.giu - y * scala(); }
+  function kVett() { return Math.min(W, Hc) * 0.42 / 30; } // pixel per m/s, indipendente dallo zoom
+
+  function freccia(x0, y0, x1, y1, colore, spessore) {
+    var dx = x1 - x0, dy = y1 - y0, L = Math.hypot(dx, dy);
+    if (L < 2) return;
+    var ux = dx / L, uy = dy / L, p = Math.min(10, L * 0.4);
+    ctx.strokeStyle = colore; ctx.fillStyle = colore; ctx.lineWidth = spessore || 2.5; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1 - ux * p * 0.6, y1 - uy * p * 0.6); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x1, y1);
+    ctx.lineTo(x1 - ux * p - uy * p * 0.5, y1 - uy * p + ux * p * 0.5);
+    ctx.lineTo(x1 - ux * p + uy * p * 0.5, y1 - uy * p - ux * p * 0.5);
+    ctx.closePath(); ctx.fill();
+  }
+  function passoGriglia() {
+    var target = vista.R / 6, c = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000];
+    for (var i = 0; i < c.length; i++) if (c[i] >= target) return c[i];
+    return 2000;
+  }
+  var PALETTE = ['--accento', '--l3', '--l2', '--l4', '--l1', '--oro'];
+  function coloreScia(i) { return col(PALETTE[i % PALETTE.length]); }
+
+  function disegna() {
+    if (!W) return;
+    var ink = col('--inchiostro'), tenue = col('--tenue'), riga = col('--riga');
+    ctx.clearRect(0, 0, W, Hc);
+    var gy = py(0), pl = PIANETI[st.pianeta];
+    // suolo
+    ctx.fillStyle = pl.suolo; ctx.globalAlpha = 0.85; ctx.fillRect(0, gy, W, Hc - gy); ctx.globalAlpha = 1;
+    // griglia e scala in metri
+    var p = passoGriglia(); ctx.font = '12px ' + col('--testo'); ctx.textAlign = 'center';
+    for (var x = 0; x <= vista.R * 1.2; x += p) {
+      var X = px(x); if (X > W - 4) break;
+      ctx.strokeStyle = riga; ctx.lineWidth = 1; ctx.globalAlpha = 0.6;
+      ctx.beginPath(); ctx.moveTo(X, MARG.su - 6); ctx.lineTo(X, gy); ctx.stroke(); ctx.globalAlpha = 1;
+      ctx.fillStyle = '#fff'; ctx.fillText(x + (x === 0 ? '' : ''), X, gy + 16);
+    }
+    ctx.textAlign = 'left'; ctx.fillStyle = '#fff'; ctx.fillText('metri', W - 48, Hc - 6);
+    for (var y = p; y <= vista.H * 3; y += p) {
+      var Y = py(y); if (Y < MARG.su - 6) break;
+      ctx.strokeStyle = riga; ctx.globalAlpha = 0.6; ctx.beginPath(); ctx.moveTo(MARG.s, Y); ctx.lineTo(W, Y); ctx.stroke(); ctx.globalAlpha = 1;
+      ctx.fillStyle = tenue; ctx.textAlign = 'right'; ctx.fillText(y, MARG.s - 5, Y + 4); ctx.textAlign = 'left';
+    }
+    // bandierina
+    if (bersaglio != null) {
+      var bx = px(bersaglio), rossa = col('--rosso');
+      ctx.strokeStyle = ink; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(bx, gy); ctx.lineTo(bx, gy - 30); ctx.stroke();
+      ctx.fillStyle = rossa; ctx.beginPath(); ctx.moveTo(bx, gy - 30); ctx.lineTo(bx + 16, gy - 25); ctx.lineTo(bx, gy - 20); ctx.fill();
+      ctx.globalAlpha = 0.25; ctx.fillRect(px(bersaglio - 0.8), gy - 3, (px(bersaglio + 0.8) - px(bersaglio - 0.8)), 6); ctx.globalAlpha = 1;
+    }
+    // lanci completati
+    scie.forEach(function (sc, i) { disegnaScia(sc, sc.T, coloreScia(sc.colore), i === scie.length - 1 && !volo ? 1 : 0.55, false); });
+    // lancio in corso
+    if (volo) disegnaScia(volo.sc, volo.t, coloreScia(volo.sc.colore), 1, true);
+    // cannone e mira
+    var cx = px(0), cy = gy, a = rad(st.th), L = st.v0 * kVett();
+    ctx.save(); ctx.translate(cx, cy); ctx.rotate(-a);
+    ctx.fillStyle = ink; ctx.fillRect(-4, -6, 30, 12); ctx.restore();
+    ctx.fillStyle = ink; ctx.beginPath(); ctx.arc(cx, cy, 10, Math.PI, 0); ctx.fill();
+    if (!volo) {
+      var ex = cx + L * Math.cos(a), ey = cy - L * Math.sin(a);
+      ctx.setLineDash([6, 5]); freccia(cx, cy, ex, ey, col('--accento'), 3); ctx.setLineDash([]);
+      ctx.fillStyle = col('--accento'); ctx.globalAlpha = 0.25; ctx.beginPath(); ctx.arc(ex, ey, 16, 0, 2 * Math.PI); ctx.fill(); ctx.globalAlpha = 1;
+      // arco dell'angolo
+      ctx.strokeStyle = tenue; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(cx, cy, 34, -a, 0); ctx.stroke();
+      ctx.fillStyle = ink; ctx.font = '700 13px ' + col('--testo');
+      ctx.fillText(Math.round(st.th) + '°', cx + 38, cy - 6);
+    }
+    // particelle di festa
+    particelle.forEach(function (q) { ctx.globalAlpha = Math.max(0, q.vita); ctx.fillStyle = q.c; ctx.fillRect(q.x, q.y, 6, 6); });
+    ctx.globalAlpha = 1;
+  }
+
+  function disegnaScia(sc, tFin, colore, alfa, inVolo) {
+    var gy = py(0), n = 80, tenue = col('--tenue');
+    ctx.globalAlpha = alfa; ctx.strokeStyle = colore; ctx.lineWidth = inVolo ? 3 : 2;
+    ctx.beginPath();
+    for (var i = 0; i <= n; i++) {
+      var t = tFin * i / n, q = posizione(sc, t);
+      if (i === 0) ctx.moveTo(px(q.x), py(q.y)); else ctx.lineTo(px(q.x), py(q.y));
+    }
+    ctx.stroke();
+    // foto a intervalli: punti a tempi uguali e le loro ombre sugli assi
+    if ($('t-strobo').checked && (inVolo || alfa === 1)) {
+      var dt = passoStrobo(sc.T);
+      for (var k = 0; k * dt <= tFin + 1e-9; k++) {
+        var q2 = posizione(sc, k * dt), X = px(q2.x), Y = py(Math.max(0, q2.y));
+        ctx.fillStyle = colore; ctx.beginPath(); ctx.arc(X, Y, 3.5, 0, 2 * Math.PI); ctx.fill();
+        ctx.fillRect(X - 1, gy - 6, 2, 6);                   // ombra sul suolo: passi uguali
+        ctx.fillRect(MARG.s - 6, Y - 1, 6, 2);               // ombra sull'asse verticale: passi che si accorciano
+      }
+      if (inVolo) $('sugg').textContent = 'una foto ogni ' + fmt(dt, dt < 0.1 ? 2 : 1) + ' s';
+    }
+    ctx.globalAlpha = 1;
+    if (!inVolo) {
+      var Xa = px(sc.R);
+      ctx.fillStyle = colore; ctx.beginPath(); ctx.arc(Xa, gy, 4, 0, 2 * Math.PI); ctx.fill();
+      ctx.font = '700 12px ' + col('--testo'); ctx.textAlign = 'center';
+      ctx.fillText(Math.round(sc.th) + '°' + (sc.pianeta !== 'terra' ? ' ' + PIANETI[sc.pianeta].nome : ''), Xa, py(0) - 8);
+      ctx.textAlign = 'left';
+    } else {
+      var q = posizione(sc, tFin), X0 = px(q.x), Y0 = py(q.y), k = kVett();
+      if ($('t-vett').checked) {
+        freccia(X0, Y0, X0 + sc.vx * k, Y0, col('--accento'), 2.5);
+        freccia(X0, Y0, X0, Y0 - q.vy * k, col('--l3'), 2.5);
+        freccia(X0, Y0, X0 + sc.vx * k, Y0 - q.vy * k, col('--inchiostro'), 1.5);
+      }
+      ctx.fillStyle = col('--inchiostro'); ctx.beginPath(); ctx.arc(X0, Y0, 7, 0, 2 * Math.PI); ctx.fill();
+    }
+  }
+
+  // ---------- animazione ----------
+  var animando = false;
+  function avvia() { if (!animando) { animando = true; requestAnimationFrame(passo); } }
+  function passo(ora) {
+    if (volo) {
+      if (volo.inizio == null) volo.inizio = ora;
+      var sec = (ora - volo.inizio) / 1000;
+      volo.t = Math.min(volo.sc.T, sec * volo.ritmo);
+      var q = posizione(volo.sc, volo.t);
+      vista.R = Math.max(vista.R, q.x * 1.08 + 2);
+      vista.H = Math.max(vista.H, q.y * 1.12);
+      mostraMisure(volo.sc, volo.t);
+      if (volo.t >= volo.sc.T) atterra();
+    }
+    particelle.forEach(function (p) { p.x += p.vx; p.y += p.vy; p.vy += 0.25; p.vita -= 0.012; });
+    particelle = particelle.filter(function (p) { return p.vita > 0; });
+    disegna();
+    if (volo || particelle.length) requestAnimationFrame(passo); else animando = false;
+  }
+  var nColore = 0;
+  function lancia(opz) {
+    if (volo) return;
+    opz = opz || {};
+    var pl = opz.pianeta || st.pianeta;
+    var sc = traiettoria(PIANETI[pl].g, opz.v0 || st.v0, opz.th || st.th);
+    sc.pianeta = pl; sc.colore = nColore++; sc.dato = opz.dato || null; sc.missione = missione;
+    var ritmo = Math.max(1, sc.T / 3.2) * ($('t-lento').checked ? 0.3 : 1);
+    volo = { sc: sc, t: 0, ritmo: ritmo, inizio: null };
+    $('ritmo').textContent = ritmo > 1.05 ? 'tempo ×' + fmt(ritmo, ritmo < 10 ? 1 : 0) : (ritmo < 0.95 ? 'al rallentatore' : '');
+    $('tit-misure').textContent = 'Mentre vola';
+    $('lancia').disabled = true;
+    avvia();
+  }
+  function atterra() {
+    var sc = volo.sc; volo = null;
+    scie.push(sc); if (scie.length > 6) scie.shift();
+    $('lancia').disabled = false; $('ritmo').textContent = '';
+    $('sugg').textContent = 'Trascina per mirare';
+    salvati.pianeti[sc.pianeta] = true;
+    if (salvati.pianeti.terra && salvati.pianeti.luna && salvati.pianeti.marte) premia('esploratore');
+    if (Math.abs(sc.th - 45) < 0.01 && sc.pianeta === 'terra') premia('quarantacinque');
+    salva();
+    mostraMisure(sc, sc.T, true);
+    controllaMissione(sc);
+    if (coda.length) { var c = coda.shift(); setTimeout(function () { lancia(c); }, 450); }
+  }
+  function festa() {
+    var cs = ['--oro', '--accento', '--l3', '--l1', '--l4'].map(col);
+    for (var i = 0; i < 70; i++) particelle.push({ x: W / 2, y: Hc * 0.4, vx: (Math.random() - 0.5) * 9, vy: -Math.random() * 8 - 2, vita: 1, c: cs[i % cs.length] });
+    avvia();
+  }
+
+  // ---------- misure e formule ----------
+  function mostraMisure(sc, t, finito) {
+    var q = posizione(sc, t), vt = Math.hypot(sc.vx, q.vy);
+    if (finito) {
+      $('tit-misure').textContent = 'Ultimo lancio: ' + PIANETI[sc.pianeta].nome + ', ' + fmt(sc.v0, 1) + ' m/s a ' + Math.round(sc.th) + '°';
+      $('misure').innerHTML = cella('gittata', fmt(sc.R, 1) + ' m') + cella('altezza massima', fmt(sc.H, 1) + ' m') + cella('tempo di volo', fmt(sc.T, 2) + ' s') + cella('velocità d\'arrivo', fmt(vt, 1) + ' m/s');
+    } else {
+      $('misure').innerHTML = cella('t', fmt(t, 2) + ' s') + cella('x', fmt(q.x, 1) + ' m') + cella('y', fmt(Math.max(0, q.y), 1) + ' m') +
+        cella('vₓ (costante)', fmt(sc.vx, 1) + ' m/s') + cella('v_y', fmt(q.vy, 1) + ' m/s');
+    }
+  }
+  function cella(n, v) { return '<div><small>' + n + '</small><b>' + v + '</b></div>'; }
+  function aggiornaFormule() {
+    var g = PIANETI[st.pianeta].g, tr = traiettoria(g, st.v0, st.th);
+    $('formule').innerHTML =
+      '<p><i>v</i><sub>0x</sub> = <i>v</i><sub>0</sub> cos θ = ' + fmt(st.v0, 1) + ' · cos ' + Math.round(st.th) + '° = <b>' + fmt(tr.vx, 2) + ' m/s</b></p>' +
+      '<p><i>v</i><sub>0y</sub> = <i>v</i><sub>0</sub> sin θ = <b>' + fmt(tr.vy, 2) + ' m/s</b></p>' +
+      '<p>tempo di volo <i>t</i> = 2<i>v</i><sub>0y</sub> / <i>g</i> = <b>' + fmt(tr.T, 2) + ' s</b> (con <i>g</i> = ' + fmt(g, 2) + ' m/s²)</p>' +
+      '<p>altezza massima <i>h</i> = <i>v</i><sub>0y</sub>² / (2<i>g</i>) = <b>' + fmt(tr.H, 2) + ' m</b></p>' +
+      '<p>gittata <i>R</i> = <i>v</i><sub>0</sub>² sin 2θ / <i>g</i> = <b>' + fmt(tr.R, 2) + ' m</b></p>';
+  }
+
+  // ---------- comandi ----------
+  function aggiornaComandi() {
+    $('ang').value = st.th; $('vel').value = st.v0;
+    $('o-ang').textContent = Math.round(st.th) + '°';
+    $('o-vel').textContent = fmt(st.v0, 1) + ' m/s';
+    var bl = missione != null;
+    $('vel').disabled = bl; $('c-vel').classList.toggle('bloccato', bl);
+    var m3 = missione === 3; $('ang').disabled = m3; $('c-ang').classList.toggle('bloccato', m3);
+    [].forEach.call($('pianeti').children, function (b) { b.setAttribute('aria-pressed', b.dataset.p === st.pianeta); b.disabled = bl; });
+    aggiornaFormule();
+    if (!volo) disegna();
+  }
+  $('pianeti').innerHTML = Object.keys(PIANETI).map(function (k) { return '<button type="button" data-p="' + k + '">' + PIANETI[k].nome + '</button>'; }).join('');
+  $('pianeti').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b || volo) return; st.pianeta = b.dataset.p; aggiornaComandi(); });
+  $('ang').addEventListener('input', function () { st.th = +this.value; aggiornaComandi(); });
+  $('vel').addEventListener('input', function () { st.v0 = +this.value; aggiornaComandi(); });
+  $('lancia').addEventListener('click', function () {
+    if (missione === 2) { esito(2, 'In questa missione l\'angolo si scrive nella casella qui sotto, poi «Lancia con questo angolo».', false); return; }
+    if (missione === 3) { esito(3, 'Scrivi la tua previsione e premi «Verifica con due lanci».', false); return; }
+    lancia();
+  });
+  $('pulisci').addEventListener('click', function () { if (volo) return; scie = []; vista = { R: bersaglio ? Math.max(45, bersaglio * 1.25) : 45, H: 10 }; $('misure').innerHTML = ''; disegna(); });
+  ['t-vett', 't-strobo'].forEach(function (id) { $(id).addEventListener('change', disegna); });
+
+  // trascinamento sulla scena
+  var trascino = false;
+  function mira(ev) {
+    var r = tela.getBoundingClientRect(), x = ev.clientX - r.left - px(0), y = py(0) - (ev.clientY - r.top);
+    if (missione !== 3) st.th = Math.max(1, Math.min(89, Math.round(Math.atan2(Math.max(y, 0.01), Math.max(x, 0.01)) * 180 / Math.PI)));
+    if (missione == null) st.v0 = Math.max(5, Math.min(30, Math.round(Math.hypot(x, y) / kVett() * 2) / 2));
+    $('sugg').textContent = 'Lascia e premi «Lancia»';
+    aggiornaComandi();
+  }
+  tela.addEventListener('pointerdown', function (ev) { if (volo) return; trascino = true; tela.setPointerCapture(ev.pointerId); mira(ev); });
+  tela.addEventListener('pointermove', function (ev) { if (trascino) mira(ev); });
+  tela.addEventListener('pointerup', function () { trascino = false; });
+  tela.addEventListener('pointercancel', function () { trascino = false; });
+
+  // ---------- missioni ----------
+  var MISSIONI = [
+    { n: 1, titolo: 'Stesso punto, due angoli',
+      testo: 'La velocità è bloccata a 20 m/s. Trova due angoli diversi che fanno atterrare la palla nello stesso punto (entro mezzo metro). Prima di provare, prova a indovinare la coppia.',
+      corpo: '' },
+    { n: 2, titolo: 'Centra la bandierina',
+      testo: 'La bandierina è a 32 m, la velocità è 20 m/s, sulla Terra. Calcola l\'angolo con la formula della gittata, scrivilo e lancia. Niente tentativi a caso: conta solo l\'angolo scritto.',
+      corpo: '<div class="prova"><input id="m2-in" inputmode="decimal" placeholder="angolo in °" aria-label="Angolo previsto in gradi"><button class="btn" id="m2-vai">Lancia con questo angolo</button></div>' },
+    { n: 3, titolo: 'Golf sulla Luna',
+      testo: 'Stessa palla e stesso colpo: 20 m/s a 40°. Quante volte più lontano arriva sulla Luna (g = 1,62 m/s²) rispetto alla Terra (g = 9,81 m/s²)? Scrivi la previsione, poi verifica.',
+      corpo: '<div class="prova"><input id="m3-in" inputmode="decimal" placeholder="volte" aria-label="Previsione: quante volte più lontano"><button class="btn" id="m3-vai">Verifica con due lanci</button></div>' }
+  ];
+  var MEDAGLIE = [
+    { id: 'doppio', nome: 'Doppio centro', come: 'centra la bandierina con entrambi gli angoli giusti' },
+    { id: 'esploratore', nome: 'Esploratore', come: 'lancia sulla Terra, sulla Luna e su Marte' },
+    { id: 'quarantacinque', nome: 'Il più lontano', come: 'lancia a 45° sulla Terra' },
+    { id: 'tre', nome: 'Artigliere', come: 'completa le tre missioni' }
+  ];
+  var errori2 = 0, centri2 = [];
+  function disegnaMissioni() {
+    var vecchio = missione != null && $('es-' + missione) ? { c: $('es-' + missione).className, h: $('es-' + missione).innerHTML } : null;
+    $('missioni').innerHTML = MISSIONI.map(function (m) {
+      var fatta = !!salvati.stelle[m.n], attiva = missione === m.n;
+      return '<section class="missione' + (attiva ? ' attiva' : '') + (fatta ? ' fatta' : '') + '" id="mis-' + m.n + '">' +
+        '<h3><span class="stella" aria-label="' + (fatta ? 'completata' : 'da fare') + '">★</span>' + m.n + '. ' + m.titolo + '</h3>' +
+        '<p>' + m.testo + '</p>' +
+        '<div class="corpo">' + m.corpo + '<div class="esito" id="es-' + m.n + '" role="status"></div></div>' +
+        '<div><button class="btn secondario" data-m="' + m.n + '">' + (attiva ? 'Esci dalla missione' : (fatta ? 'Rifai' : 'Inizia')) + '</button></div></section>';
+    }).join('');
+    var n = Object.keys(salvati.stelle).length;
+    $('stelle').textContent = '★ ' + n + '/3';
+    $('medaglie').innerHTML = MEDAGLIE.map(function (m) {
+      var v = !!salvati.medaglie[m.id];
+      return '<span class="medaglia' + (v ? ' vinta' : '') + '" title="' + m.come + '">' + (v ? '🏅' : '○') + ' ' + m.nome + (v ? '' : ': ' + m.come) + '</span>';
+    }).join('');
+    if (vecchio) { var e = $('es-' + missione); e.className = vecchio.c; e.innerHTML = vecchio.h; }
+    var b2 = $('m2-vai'); if (b2) b2.onclick = prova2;
+    var b3 = $('m3-vai'); if (b3) b3.onclick = prova3;
+  }
+  function esito(n, html, ok) { var e = $('es-' + n); if (!e) return; e.className = 'esito ' + (ok ? 'ok' : 'no'); e.innerHTML = html; }
+  function premia(id) { if (!salvati.medaglie[id]) { salvati.medaglie[id] = true; salva(); disegnaMissioni(); } }
+  function stella(n) {
+    var nuova = !salvati.stelle[n];
+    salvati.stelle[n] = true;
+    if (salvati.stelle[1] && salvati.stelle[2] && salvati.stelle[3]) salvati.medaglie.tre = true;
+    salva(); festa(); disegnaMissioni();
+    return nuova;
+  }
+  $('missioni').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-m]'); if (!b || volo) return;
+    var n = +b.dataset.m;
+    if (missione === n) { esci(); return; }
+    missione = n; st.pianeta = 'terra'; st.v0 = V_MISSIONE; scie = []; coda = []; errori2 = 0; centri2 = [];
+    bersaglio = n === 2 ? 32 : null;
+    if (n === 3) st.th = 40;
+    vista = { R: n === 2 ? 42 : 45, H: 10 };
+    disegnaMissioni(); aggiornaComandi();
+    $('mis-' + n).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    tela.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  function esci() { missione = null; bersaglio = null; disegnaMissioni(); aggiornaComandi(); }
+
+  function controllaMissione(sc) {
+    if (missione === 1) {
+      var altre = scie.filter(function (x) { return x !== sc && x.missione === 1 && x.pianeta === 'terra'; });
+      var gemella = altre.filter(function (x) { return Math.abs(x.R - sc.R) <= 0.5 && Math.abs(x.th - sc.th) >= 4; })[0];
+      if (gemella) {
+        var a = Math.min(gemella.th, sc.th), b = Math.max(gemella.th, sc.th);
+        esito(1, '<b>Ci sei!</b> ' + a + '° e ' + b + '° atterrano entrambi a circa ' + fmt(sc.R, 1) + ' m. La loro somma fa ' + (a + b) + '°. ' +
+          (Math.abs(a + b - 90) <= 2 ? 'Non è un caso: la gittata dipende da sin 2θ, e sin 2θ = sin(180° − 2θ). Due angoli complementari danno la stessa gittata.' : 'Prova a vedere quanto fa la somma con altre coppie.'), true);
+        stella(1);
+      } else if (altre.length) {
+        esito(1, 'Questo atterra a ' + fmt(sc.R, 1) + ' m. Cerca un secondo angolo che arrivi nello stesso punto di uno dei lanci precedenti.', false);
+      } else {
+        esito(1, 'Primo lancio: ' + fmt(sc.R, 1) + ' m. Ora trova un altro angolo che arrivi lì.', false);
+      }
+    }
+    if (missione === 2 && sc.dato === 'm2') {
+      var scarto = sc.R - bersaglio;
+      if (Math.abs(scarto) <= 0.8) {
+        if (!centri2.some(function (t) { return Math.abs(t - sc.th) < 10; })) centri2.push(sc.th);
+        if (centri2.length >= 2) {
+          esito(2, '<b>Doppio centro!</b> Con ' + centri2.map(function (t) { return fmt(t, 1) + '°'; }).join(' e ') + ' la palla arriva alla bandierina. Le due soluzioni di sin 2θ = <i>R g</i> / <i>v</i><sub>0</sub>² sono complementari.', true);
+          premia('doppio'); stella(2);
+        } else {
+          esito(2, '<b>Centro!</b> Atterrata a ' + fmt(sc.R, 1) + ' m. Esiste un secondo angolo che funziona: trovalo per la medaglia «Doppio centro».', true);
+          stella(2);
+        }
+      } else {
+        errori2++;
+        esito(2, 'Atterrata a ' + fmt(sc.R, 1) + ' m: ' + (scarto < 0 ? 'corta' : 'lunga') + ' di ' + fmt(Math.abs(scarto), 1) + ' m.' +
+          (errori2 >= 2 ? ' Indizio: dalla formula della gittata ricavi sin 2θ = <i>R g</i> / <i>v</i><sub>0</sub>² = 32 · 9,81 / 400. Poi trovi 2θ e lo dividi per 2.' : ' Ricontrolla il calcolo.'), false);
+      }
+    }
+    if (missione === 3 && sc.dato === 'm3-luna') {
+      var t = scie.filter(function (x) { return x.dato === 'm3-terra'; }).pop();
+      var rapporto = sc.R / t.R, pred = prova3.previsione, ok = Math.abs(pred - rapporto) / rapporto <= 0.05;
+      esito(3, (ok ? '<b>Previsione giusta!</b> ' : 'Hai previsto ' + fmt(pred, 2) + ' volte. ') +
+        'Terra ' + fmt(t.R, 1) + ' m, Luna ' + fmt(sc.R, 1) + ' m: ' + fmt(rapporto, 2) + ' volte più lontano. ' +
+        (ok ? 'La gittata è inversamente proporzionale a <i>g</i>: il rapporto è 9,81 / 1,62.' : 'Indizio: nella formula della gittata <i>g</i> sta al denominatore, e tutto il resto non cambia.'), ok);
+      if (ok) stella(3);
+    }
+  }
+  function prova2() {
+    if (volo) return;
+    var a = leggiNumero($('m2-in').value);
+    if (a == null || a <= 0 || a >= 90) { esito(2, 'Scrivi un angolo tra 0° e 90°.', false); return; }
+    st.th = a; aggiornaComandi();
+    lancia({ th: a, dato: 'm2' });
+  }
+  function prova3() {
+    if (volo) return;
+    var r = leggiNumero($('m3-in').value);
+    if (r == null || r <= 0) { esito(3, 'Scrivi un numero, per esempio 2,5.', false); return; }
+    prova3.previsione = r; scie = []; vista = { R: 45, H: 10 };
+    esito(3, 'Lancio sulla Terra, poi sulla Luna…', true);
+    st.pianeta = 'terra'; aggiornaComandi();
+    coda = [{ pianeta: 'luna', th: 40, dato: 'm3-luna' }];
+    lancia({ pianeta: 'terra', th: 40, dato: 'm3-terra' });
+  }
+
+  // ---------- avvio ----------
+  window.addEventListener('resize', dimensiona);
+  if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', disegna);
+  disegnaMissioni(); aggiornaComandi(); dimensiona();
+  $('misure').innerHTML = '<div><small>Pronto</small><b>trascina e lancia</b></div>';
+  $('tit-misure').textContent = 'Misure';
+})();
+</script>
+</body>
+</html>

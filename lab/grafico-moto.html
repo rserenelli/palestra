@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mini lab · Muovi e disegna</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap">
+<style>
+/* ===== Parte comune a tutti i mini lab (copiare uguale) ===== */
+:root {
+  --carta: #f4f6fa; --foglio: #ffffff; --inchiostro: #17223b; --tenue: #5a6680; --riga: #d5dbe8;
+  --accento: #1f4fd8; --accento-testo: #ffffff; --accento-soft: #e6ecfd;
+  --l1: #1c7c54; --l2: #b26a00; --l3: #a3264e; --l4: #6a3fb0; --oro: #c99a06;
+  --ok: #1c7c54; --ok-soft: #e2f3ea; --rosso: #c8102e; --rosso-soft: #fbe6e9;
+  --display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+  --testo: "Atkinson Hyperlegible", Verdana, system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --carta: #10151f; --foglio: #1a2130; --inchiostro: #e8ecf5; --tenue: #9aa6bf; --riga: #313b50;
+    --accento: #8fb0ff; --accento-testo: #0d1424; --accento-soft: #232f4d;
+    --l1: #5fd29c; --l2: #f0b24a; --l3: #f08aa9; --l4: #c3a4ff; --oro: #f5c84b;
+    --ok: #5fd29c; --ok-soft: #173326; --rosso: #ff6b7a; --rosso-soft: #3a1c22;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--carta); color: var(--inchiostro); font: 17px/1.5 var(--testo); }
+a { color: var(--accento); }
+:focus-visible { outline: 3px solid var(--accento); outline-offset: 2px; border-radius: 4px; }
+.barra { border-bottom: 1px solid var(--riga); background: var(--foglio); }
+.barra div { max-width: 720px; margin: 0 auto; padding: 10px 16px; display: flex; gap: 10px; align-items: center; font-size: 15px; }
+.barra a { text-decoration: none; font-weight: 700; }
+.barra .stelle { margin-left: auto; font-weight: 700; color: var(--oro); white-space: nowrap; }
+main { max-width: 720px; margin: 0 auto; padding: 14px 16px 60px; display: flex; flex-direction: column; gap: 14px; }
+h1 { font: 800 clamp(24px, 6vw, 32px)/1.15 var(--display); margin: 0; }
+h2 { font: 600 19px/1.2 var(--display); margin: 8px 0 0; }
+.sopra { color: var(--tenue); font-size: 15px; margin: 0; }
+.scena { position: relative; background: var(--foglio); border: 1px solid var(--riga); border-radius: 14px; overflow: hidden; }
+.scena canvas { display: block; width: 100%; height: min(62vw, 400px); touch-action: none; cursor: crosshair; }
+.scena .suggerimento { position: absolute; left: 10px; top: 8px; font-size: 13px; color: var(--tenue); pointer-events: none; }
+.scena .velocita { position: absolute; right: 10px; top: 8px; font-size: 13px; color: var(--tenue); pointer-events: none; }
+.pannello { background: var(--foglio); border: 1px solid var(--riga); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.riga { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--riga); border-radius: 999px; overflow: hidden; }
+.seg button { border: 0; background: none; color: inherit; font: inherit; font-size: 15px; padding: 7px 13px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accento); color: var(--accento-testo); font-weight: 700; }
+.interr { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; padding: 6px 10px; border: 1px solid var(--riga); border-radius: 999px; cursor: pointer; user-select: none; }
+.interr input { accent-color: var(--accento); width: 18px; height: 18px; margin: 0; }
+.cursore { display: grid; grid-template-columns: 104px 1fr 86px; gap: 10px; align-items: center; font-size: 15px; }
+.cursore input[type=range] { width: 100%; accent-color: var(--accento); height: 28px; }
+.cursore output { font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+.cursore.bloccato { opacity: .55; }
+.btn { border: 0; border-radius: 12px; background: var(--accento); color: var(--accento-testo); font: 700 18px var(--display); padding: 12px 18px; cursor: pointer; }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn.secondario { background: var(--accento-soft); color: var(--accento); font-size: 15px; padding: 8px 12px; }
+.btn.grande { width: 100%; }
+.misure { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; }
+.misure div { background: var(--carta); border-radius: 10px; padding: 8px 10px; }
+.misure small { display: block; color: var(--tenue); font-size: 13px; }
+.misure b { font: 700 19px var(--display); font-variant-numeric: tabular-nums; }
+details.formule summary { cursor: pointer; font-weight: 700; }
+.formule p { margin: 6px 0; font-variant-numeric: tabular-nums; }
+.formule .nota { color: var(--tenue); font-size: 14px; }
+.missione { border: 1px solid var(--riga); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: var(--foglio); }
+.missione.attiva { border: 2px solid var(--accento); }
+.missione.fatta .stella { color: var(--oro); }
+.missione h3 { margin: 0; font: 700 17px var(--display); display: flex; gap: 8px; align-items: baseline; }
+.missione h3 .stella { font-size: 20px; color: var(--riga); }
+.missione p { margin: 0; }
+.missione .corpo { display: none; flex-direction: column; gap: 8px; }
+.missione.attiva .corpo { display: flex; }
+.prova { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.prova input { font: inherit; font-size: 18px; width: 110px; padding: 8px 10px; border: 1px solid var(--riga); border-radius: 10px; background: var(--carta); color: inherit; }
+.esito { border-radius: 10px; padding: 10px 12px; font-size: 16px; }
+.esito.ok { background: var(--ok-soft); }
+.esito.no { background: var(--rosso-soft); }
+.esito:empty { display: none; }
+.medaglie { display: flex; gap: 8px; flex-wrap: wrap; }
+.medaglia { display: inline-flex; gap: 6px; align-items: center; font-size: 14px; padding: 5px 10px; border-radius: 999px; background: var(--carta); color: var(--tenue); }
+.medaglia.vinta { background: var(--accento-soft); color: var(--inchiostro); font-weight: 700; }
+.collegati { margin: 0; padding-left: 20px; }
+.collegati li { margin: 4px 0; }
+footer { max-width: 720px; margin: 0 auto; padding: 0 16px 30px; color: var(--tenue); font-size: 14px; }
+@media (max-width: 420px) { .cursore { grid-template-columns: 84px 1fr 80px; } }
+/* --- sfondo: quaderno a quadretti che sfuma e una luce colorata in alto --- */
+html { background: var(--carta); }
+body { background: transparent; position: relative; }
+body::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background-image:
+    radial-gradient(ellipse 70% 42% at 8% -6%, color-mix(in srgb, var(--accento) 16%, transparent), transparent 70%),
+    radial-gradient(ellipse 60% 38% at 100% 0%, color-mix(in srgb, var(--l4) 12%, transparent), transparent 70%),
+    linear-gradient(color-mix(in srgb, var(--accento) 9%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--accento) 9%, transparent) 1px, transparent 1px);
+  background-size: auto, auto, 22px 22px, 22px 22px;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0, rgba(0,0,0,.55) 45%, transparent 90%);
+          mask-image: linear-gradient(to bottom, #000 0, rgba(0,0,0,.55) 45%, transparent 90%); }
+.barra { background: color-mix(in srgb, var(--foglio) 82%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+/* --- la chicca: un'onda sottile che attraversa lo sfondo in alto --- */
+body::after { content: ""; position: fixed; left: 0; right: 0; top: 84px; height: 130px; z-index: -1; pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 60' preserveAspectRatio='none'%3E%3Cpolyline points='0,30.0 4,25.2 8,20.7 12,16.7 16,13.3 20,10.5 24,8.5 28,7.4 32,7.1 36,7.5 40,8.8 44,10.8 48,13.3 52,16.4 56,19.9 60,23.6 64,27.5 68,31.3 72,34.9 76,38.3 80,41.2 84,43.7 88,45.6 92,47.0 96,47.7 100,47.7 104,47.1 108,46.0 112,44.3 116,42.1 120,39.6 124,36.9 128,34.0 132,31.0 136,28.1 140,25.3 144,22.8 148,20.6 152,18.8 156,17.5 160,16.6 164,16.3 168,16.4 172,17.0 176,18.0 180,19.5 184,21.2 188,23.2 192,25.4 196,27.7 200,30.0 204,32.2 208,34.3 212,36.2 216,37.8 220,39.0 224,39.9 228,40.5 232,40.6 236,40.4 240,39.8 244,38.9 248,37.7 252,36.3 256,34.7 260,33.0 264,31.2 268,29.4 272,27.7 276,26.2 280,24.8 284,23.6 288,22.7 292,22.1 296,21.8 300,21.8 304,22.1 308,22.6 312,23.4 316,24.4 320,25.5 324,26.8 328,28.2 332,29.5 336,30.9 340,32.2 344,33.3 348,34.3 352,35.2 356,35.8 360,36.2 364,36.4 368,36.3 372,36.0 376,35.5 380,34.9 384,34.1 388,33.1 392,32.1 396,31.1 400,30.0' fill='none' stroke='%231f4fd8' stroke-opacity='.22' stroke-width='1.6' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E") no-repeat center / 100% 100%; opacity: .9; }
+@media (prefers-color-scheme: dark) { body::after { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 60' preserveAspectRatio='none'%3E%3Cpolyline points='0,30.0 4,25.2 8,20.7 12,16.7 16,13.3 20,10.5 24,8.5 28,7.4 32,7.1 36,7.5 40,8.8 44,10.8 48,13.3 52,16.4 56,19.9 60,23.6 64,27.5 68,31.3 72,34.9 76,38.3 80,41.2 84,43.7 88,45.6 92,47.0 96,47.7 100,47.7 104,47.1 108,46.0 112,44.3 116,42.1 120,39.6 124,36.9 128,34.0 132,31.0 136,28.1 140,25.3 144,22.8 148,20.6 152,18.8 156,17.5 160,16.6 164,16.3 168,16.4 172,17.0 176,18.0 180,19.5 184,21.2 188,23.2 192,25.4 196,27.7 200,30.0 204,32.2 208,34.3 212,36.2 216,37.8 220,39.0 224,39.9 228,40.5 232,40.6 236,40.4 240,39.8 244,38.9 248,37.7 252,36.3 256,34.7 260,33.0 264,31.2 268,29.4 272,27.7 276,26.2 280,24.8 284,23.6 288,22.7 292,22.1 296,21.8 300,21.8 304,22.1 308,22.6 312,23.4 316,24.4 320,25.5 324,26.8 328,28.2 332,29.5 336,30.9 340,32.2 344,33.3 348,34.3 352,35.2 356,35.8 360,36.2 364,36.4 368,36.3 372,36.0 376,35.5 380,34.9 384,34.1 388,33.1 392,32.1 396,31.1 400,30.0' fill='none' stroke='%238fb0ff' stroke-opacity='.22' stroke-width='1.6' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E"); opacity: .7; } }
+/* ===== fine parte comune ===== */
+
+.scelte { display: flex; flex-wrap: wrap; gap: 8px; }
+.scelte button { font: inherit; font-size: 16px; padding: 9px 13px; border-radius: 12px; border: 1px solid var(--riga); background: var(--carta); color: inherit; cursor: pointer; }
+.scelte button.giusta { background: var(--ok-soft); border-color: var(--ok); font-weight: 700; }
+.scelte button.sbagliata { background: var(--rosso-soft); border-color: var(--rosso); opacity: .8; }
+.scelte button:disabled { cursor: default; }
+.prova input.corto { width: 84px; }
+.prova .un { color: var(--tenue); font-size: 15px; }
+select { font: inherit; font-size: 16px; padding: 7px 10px; border-radius: 10px; border: 1px solid var(--riga); background: var(--carta); color: inherit; }
+.medaglie { display: flex; flex-wrap: wrap; gap: 8px; }
+.cursore.bloccato input { pointer-events: none; }
+.btn.stop { background: var(--rosso); color: #fff; }
+.scena .suggerimento { position: static; display: block; padding: 7px 12px 0; font-size: 13px; }
+
+.scena canvas { height: min(104vw, 400px); }
+</style>
+</head>
+<body>
+<header class="barra"><div>
+  <a href="../index.html#3i-fis-u2">← Palestra</a><span class="sopra">3I Fisica</span>
+  <span class="stelle" id="stelle" aria-label="Missioni completate"></span>
+</div></header>
+
+<main>
+  <div>
+    <p class="sopra">Mini lab · Il moto</p>
+    <h1>Muovi e disegna</h1>
+  </div>
+  <p class="sopra">Muovi la figura con il cursore della velocità e guarda nascere due grafici: lo spazio nel tempo (s–t) e la velocità nel tempo (v–t). Poi passa all’auto che accelera e scopri che lo spazio percorso è l’area sotto il grafico della velocità.</p>
+
+  <div class="scena">
+    <canvas id="tela" aria-label="Una figura su una pista e i grafici spazio-tempo e velocità-tempo che si disegnano mentre si muove"></canvas>
+    <span class="suggerimento" id="sugg">Premi Parti e cambia la velocità mentre scorre il tempo</span>
+  </div>
+
+  <div class="pannello">
+<div class="seg" id="cosa"><button data-v="mov" aria-pressed="true">Moto a velocità scelta</button><button data-v="auto" aria-pressed="false">Auto che accelera</button></div><div id="ctl-v"><div class="cursore" id="c-v"><label for="v">Velocità</label><input type="range" id="v" min="-3" max="3" step="0.5" value="0"><output id="o-v"></output></div></div><div id="ctl-a" hidden><div class="cursore" id="c-a"><label for="a">Accelerazione</label><input type="range" id="a" min="0" max="6" step="0.5" value="2"><output id="o-a"></output></div></div><div class="riga"><button class="btn " id="go">Parti ▶</button><button class="btn secondario" id="rst">Da capo</button></div>
+  </div>
+
+  <div class="pannello">
+    <b>Le misure, adesso</b>
+    <div class="misure" id="misure"></div>
+    <details class="formule">
+      <summary>Le formule, con i numeri di adesso</summary>
+      <div id="formule"></div>
+      <p class="nota">Durante una missione prova prima a calcolare da solo.</p>
+    </details>
+  </div>
+
+  <h2>Missioni</h2>
+  <div id="missioni"></div>
+
+  <h2>Medaglie</h2>
+  <div class="medaglie" id="medaglie"></div>
+
+  <h2>Esercizi collegati</h2>
+  <ul class="collegati">
+    <li><a href="../index.html#3i-fis-u2">Gli esercizi sul moto</a></li>
+  </ul>
+</main>
+<footer>Velocità = spazio / tempo. Accelerazione = variazione di velocità / tempo. Con velocità costante s = v·t; partendo da fermo con accelerazione costante s = ½·a·t². Lo spazio è l’area sotto il grafico v–t. Le stelle restano solo su questo dispositivo.</footer>
+
+<script>/* Motore comune dei mini lab nuovi (missioni, medaglie, coriandoli, piano cartesiano, comandi).
+   Si usa così:  var L = Lab.init({chiave, missioni, medaglie});  poi L.tela(), L.piano(), ... */
+(function () {
+  'use strict';
+  var MENO = '−';
+  function $(id) { return document.getElementById(id); }
+  function fmt(x, d) {
+    var r = (Math.round(x * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d).replace('.', ',');
+    r = r.replace(/^-/, MENO);
+    if (/^−0(,0+)?$/.test(r)) r = r.slice(1);
+    return r;
+  }
+  function bello(x) { var r = fmt(x, 2); return r.replace(/,00$/, '').replace(/(,\d)0$/, '$1'); }
+  function num(s) {
+    s = String(s).replace(/−/g, '-').replace(/\s/g, '').replace(',', '.');
+    var m = s.match(/^(-?[\d.]+)\/(-?[\d.]+)$/);
+    if (m) { var d = parseFloat(m[2]); return d ? parseFloat(m[1]) / d : null; }
+    if (!/^-?(\d+\.?\d*|\.\d+)$/.test(s)) return null;
+    return parseFloat(s);
+  }
+  function lista(s) {
+    return String(s).split(/;|\be\b|\s+/).map(function (t) { return t.trim(); }).filter(Boolean).map(num).filter(function (x) { return x != null; });
+  }
+  function col(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+  function colori() {
+    return { ink: col('--inchiostro'), tenue: col('--tenue'), riga: col('--riga'), acc: col('--accento'), ros: col('--l3'), verde: col('--l1'),
+      arancio: col('--l2'), viola: col('--l4'), oro: col('--oro'), rosso: col('--rosso'), foglio: col('--foglio'), carta: col('--carta'), ok: col('--ok') };
+  }
+  function freccia(ctx, x0, y0, x1, y1, c, w) {
+    var dx = x1 - x0, dy = y1 - y0, L = Math.hypot(dx, dy); if (L < 3) return;
+    var ux = dx / L, uy = dy / L, p = Math.min(10, L * 0.45);
+    ctx.strokeStyle = c; ctx.fillStyle = c; ctx.lineWidth = w || 2.5; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1 - ux * p * 0.6, y1 - uy * p * 0.6); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x1, y1);
+    ctx.lineTo(x1 - ux * p - uy * p * 0.5, y1 - uy * p + ux * p * 0.5);
+    ctx.lineTo(x1 - ux * p + uy * p * 0.5, y1 - uy * p - ux * p * 0.5);
+    ctx.closePath(); ctx.fill();
+  }
+
+  function init(cfg) {
+    var L = window.__L = { $: $, fmt: fmt, bello: bello, num: num, lista: lista, col: col, colori: colori, freccia: freccia, MENO: MENO, mis: null, risposto: false, azioni: {}, cfg: cfg };
+    var tent = {}, scelteDef = {}, chiave = 'palestra-lab-' + cfg.chiave, salvati = { stelle: {}, medaglie: {} }, esiti = {}, particelle = [], teli = [], fmts = {};
+    try { var s0 = JSON.parse(localStorage.getItem(chiave)); if (s0 && s0.stelle) salvati = s0; } catch (e) {}
+    function salva() { try { localStorage.setItem(chiave, JSON.stringify(salvati)); } catch (e) {} }
+    L.salvati = salvati;
+
+    // ---------- missioni e medaglie ----------
+    function disegnaMissioni() {
+      $('missioni').innerHTML = cfg.missioni.map(function (m) {
+        var fatta = !!salvati.stelle[m.n], att = L.mis === m.n;
+        return '<section class="missione' + (att ? ' attiva' : '') + (fatta ? ' fatta' : '') + '" id="mis-' + m.n + '"><h3><span class="stella">★<\/span>' + m.n + '. ' + m.titolo + '<\/h3><p>' + m.testo + '<\/p>' +
+          '<div class="corpo">' + (m.corpo || '') + '<div class="esito" id="es-' + m.n + '" role="status"><\/div><\/div>' +
+          '<div><button class="btn secondario" data-m="' + m.n + '">' + (att ? 'Esci dalla missione' : (fatta ? 'Rifai' : 'Inizia')) + '<\/button><\/div><\/section>';
+      }).join('');
+      Object.keys(esiti).forEach(function (k) { var e = $('es-' + k); if (e) { e.className = esiti[k].c; e.innerHTML = esiti[k].h; } });
+      $('stelle').textContent = '★ ' + Object.keys(salvati.stelle).length + '/' + cfg.missioni.length;
+      $('medaglie').innerHTML = cfg.medaglie.map(function (m) {
+        var v = !!salvati.medaglie[m.id];
+        return '<span class="medaglia' + (v ? ' vinta' : '') + '">' + (v ? '🏅' : '○') + ' ' + m.nome + (v ? '' : ': ' + m.come) + '<\/span>';
+      }).join('');
+    }
+    L.esito = function (n, html, ok) { esiti[n] = { c: 'esito ' + (ok ? 'ok' : 'no'), h: html }; var e = $('es-' + n); if (e) { e.className = esiti[n].c; e.innerHTML = html; } };
+    L.premia = function (id) { if (!salvati.medaglie[id]) { salvati.medaglie[id] = true; salva(); disegnaMissioni(); } };
+    L.stella = function (n) {
+      salvati.stelle[n] = true;
+      if (cfg.missioni.every(function (m) { return salvati.stelle[m.n]; })) salvati.medaglie.tutte = true;
+      salva(); disegnaMissioni(); L.festa();
+    };
+    L.sugg = function (t) { $('sugg').textContent = t; };
+    $('missioni').addEventListener('click', function (ev) {
+      var b = ev.target.closest('button'); if (!b) return;
+      if (b.dataset.m) {
+        var n = +b.dataset.m;
+        if (L.mis === n) { L.mis = null; delete esiti[n]; disegnaMissioni(); if (L.onMissione) L.onMissione(null); return; }
+        L.mis = n; L.risposto = false; esiti = {}; tent = {};
+        disegnaMissioni();
+        if (L.onMissione) L.onMissione(n);
+        if (L.onMissione) { var t = $('tela'); if (t && t.scrollIntoView) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+        return;
+      }
+      if (b.closest('.scelte') && b.dataset.r !== undefined) {
+        if (L.risposto) return; L.risposto = true;
+        [].forEach.call(b.parentNode.children, function (x) { x.disabled = true; });
+        if (L.onScelta) L.onScelta(L.mis, b.dataset.r, b); else L.rispScelta(L.mis, +b.dataset.r, b);
+        return;
+      }
+      if (b.id && L.azioni[b.id]) L.azioni[b.id]();
+    });
+    $('missioni').addEventListener('keydown', function (ev) {
+      if (ev.key !== 'Enter' || !ev.target.closest('.prova')) return;
+      var b = ev.target.closest('.prova').querySelector('button'); if (b) b.click();
+    });
+    L.fineMissione = function () { L.mis = null; disegnaMissioni(); };
+    L.reset = function () { L.risposto = false; };
+
+    // ---------- coriandoli ----------
+    var inFesta = false;
+    L.festa = function () {
+      var cs = [col('--oro'), col('--accento'), col('--l3'), col('--l1'), col('--l4')], T = teli[0], w = T ? T.W : 300, h = T ? T.H : 300;
+      for (var i = 0; i < 70; i++) particelle.push({ x: w / 2, y: h * 0.35, vx: (Math.random() - 0.5) * 9, vy: -Math.random() * 8 - 2, vita: 1, c: cs[i % cs.length] });
+      if (!inFesta) { inFesta = true; requestAnimationFrame(cicloFesta); }
+    };
+    function cicloFesta() {
+      particelle.forEach(function (p) { p.x += p.vx; p.y += p.vy; p.vy += 0.25; p.vita -= 0.015; });
+      particelle = particelle.filter(function (p) { return p.vita > 0; });
+      teli.forEach(function (T) { T.ridisegna(); });
+      if (particelle.length) requestAnimationFrame(cicloFesta); else inFesta = false;
+    }
+
+    // ---------- canvas ----------
+    L.tela = function (id, disegna) {
+      var c = $(id), ctx = c.getContext('2d'), T = { c: c, ctx: ctx, W: 0, H: 0 };
+      function dim() {
+        var dpr = Math.min(window.devicePixelRatio || 1, 2.5), r = c.getBoundingClientRect();
+        T.W = r.width; T.H = r.height; c.width = Math.round(T.W * dpr); c.height = Math.round(T.H * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0); T.ridisegna();
+      }
+      T.ridisegna = function () {
+        if (!T.W) return;
+        ctx.clearRect(0, 0, T.W, T.H); ctx.textAlign = 'left'; ctx.lineCap = 'butt'; ctx.setLineDash([]);
+        disegna(ctx, T.W, T.H, colori());
+        particelle.forEach(function (p) { ctx.globalAlpha = Math.max(0, p.vita); ctx.fillStyle = p.c; ctx.fillRect(p.x, p.y, 6, 6); });
+        ctx.globalAlpha = 1;
+      };
+      window.addEventListener('resize', dim);
+      if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () { T.ridisegna(); });
+      teli.push(T); dim(); return T;
+    };
+    L.puntatore = function (T, h) {
+      var c = T.c, premuto = false;
+      function pos(ev) { var r = c.getBoundingClientRect(); return { x: ev.clientX - r.left, y: ev.clientY - r.top }; }
+      c.addEventListener('pointerdown', function (ev) {
+        var p = pos(ev); if (h.giu && h.giu(p.x, p.y, ev) === false) return;
+        premuto = true; try { c.setPointerCapture(ev.pointerId); } catch (e) {}
+      });
+      c.addEventListener('pointermove', function (ev) { if (premuto && h.muovi) { var p = pos(ev); h.muovi(p.x, p.y, ev); } });
+      function su(ev) { if (!premuto) return; premuto = false; if (h.su) { var p = pos(ev); h.su(p.x, p.y, ev); } }
+      c.addEventListener('pointerup', su); c.addEventListener('pointercancel', su);
+    };
+    L.ciclo = function (fn) {
+      var ultimo = null;
+      (function f(ora) { var dt = ultimo == null ? 0 : Math.min(0.05, (ora - ultimo) / 1000); ultimo = ora; fn(dt, ora / 1000); requestAnimationFrame(f); })(performance.now());
+    };
+
+    // ---------- piano cartesiano ----------
+    L.piano = function (ctx, W, H, o) {
+      var C = colori(), m = o.m == null ? 14 : o.m, xmin = o.x[0], xmax = o.x[1], ymin = o.y[0], ymax = o.y[1];
+      var sx = (W - 2 * m) / (xmax - xmin), sy = (H - 2 * m) / (ymax - ymin);
+      if (o.uguale) { sx = sy = Math.min(sx, sy); }
+      var left = (W - sx * (xmax - xmin)) / 2, bottom = (H - sy * (ymax - ymin)) / 2;
+      var P = { sx: sx, sy: sy, C: C, xmin: xmin, xmax: xmax, ymin: ymin, ymax: ymax };
+      P.X = function (x) { return left + (x - xmin) * sx; };
+      P.Y = function (y) { return H - bottom - (y - ymin) * sy; };
+      P.x = function (px) { return xmin + (px - left) / sx; };
+      P.y = function (py) { return ymin + (H - bottom - py) / sy; };
+      P.griglia = function (p, et) {
+        var i;
+        ctx.lineWidth = 1; ctx.strokeStyle = C.riga; ctx.fillStyle = C.tenue; ctx.font = '12px ' + col('--testo');
+        for (i = Math.ceil(xmin / p - 1e-9); i * p <= xmax + 1e-9; i++) { ctx.beginPath(); ctx.moveTo(P.X(i * p), P.Y(ymin)); ctx.lineTo(P.X(i * p), P.Y(ymax)); ctx.stroke(); }
+        for (i = Math.ceil(ymin / p - 1e-9); i * p <= ymax + 1e-9; i++) { ctx.beginPath(); ctx.moveTo(P.X(xmin), P.Y(i * p)); ctx.lineTo(P.X(xmax), P.Y(i * p)); ctx.stroke(); }
+        ctx.strokeStyle = C.ink; ctx.lineWidth = 1.6;
+        if (ymin <= 0 && ymax >= 0) { ctx.beginPath(); ctx.moveTo(P.X(xmin), P.Y(0)); ctx.lineTo(P.X(xmax), P.Y(0)); ctx.stroke(); }
+        if (xmin <= 0 && xmax >= 0) { ctx.beginPath(); ctx.moveTo(P.X(0), P.Y(ymin)); ctx.lineTo(P.X(0), P.Y(ymax)); ctx.stroke(); }
+        if (et !== false) {
+          var e = et || p, ya = Math.min(Math.max(P.Y(0), 12), H - 6);
+          ctx.fillStyle = C.tenue; ctx.textAlign = 'center';
+          for (i = Math.ceil(xmin / e - 1e-9); i * e <= xmax + 1e-9; i++) if (i) ctx.fillText(bello(i * e), P.X(i * e), Math.min(ya + 14, H - 3));
+          var xa = Math.min(Math.max(P.X(0), 22), W - 4); ctx.textAlign = 'right';
+          for (i = Math.ceil(ymin / e - 1e-9); i * e <= ymax + 1e-9; i++) if (i) ctx.fillText(bello(i * e), xa - 4, P.Y(i * e) + 4);
+          ctx.textAlign = 'left';
+        }
+      };
+      P.curva = function (f, op) {
+        op = op || {}; var a = op.da == null ? xmin : op.da, b = op.a == null ? xmax : op.a, N = op.N || 400, prev = null;
+        ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, H); ctx.clip();
+        ctx.strokeStyle = op.c || C.acc; ctx.lineWidth = op.w || 3; ctx.lineCap = 'round'; ctx.setLineDash(op.dash || []);
+        ctx.beginPath();
+        for (var i = 0; i <= N; i++) {
+          var x = a + (b - a) * i / N, y = f(x);
+          if (y == null || !isFinite(y) || Math.abs(P.Y(y)) > H * 6) { prev = null; continue; }
+          var X = P.X(x), Y = P.Y(y);
+          if (prev && Math.abs(Y - prev) > H * 0.9) prev = null;
+          if (prev == null) ctx.moveTo(X, Y); else ctx.lineTo(X, Y);
+          prev = Y;
+        }
+        ctx.stroke(); ctx.restore(); ctx.setLineDash([]);
+      };
+      P.retta = function (A, B, Cc, op) { // retta A x + B y = C
+        op = op || {};
+        if (Math.abs(B) < 1e-12) { if (Math.abs(A) < 1e-12) return; var x0 = Cc / A; P.segm(x0, ymin, x0, ymax, op.c, op.w, op.dash); }
+        else P.curva(function (x) { return (Cc - A * x) / B; }, { c: op.c, w: op.w, dash: op.dash, N: 120 });
+      };
+      P.segm = function (x1, y1, x2, y2, c, w, dash) {
+        ctx.strokeStyle = c || C.ink; ctx.lineWidth = w || 2; ctx.setLineDash(dash || []); ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(P.X(x1), P.Y(y1)); ctx.lineTo(P.X(x2), P.Y(y2)); ctx.stroke(); ctx.setLineDash([]);
+      };
+      P.punto = function (x, y, r, c, vuoto) {
+        ctx.beginPath(); ctx.arc(P.X(x), P.Y(y), r || 6, 0, 2 * Math.PI);
+        if (vuoto) { ctx.fillStyle = C.foglio; ctx.fill(); ctx.strokeStyle = c || C.ink; ctx.lineWidth = 2.5; ctx.stroke(); }
+        else { ctx.fillStyle = c || C.acc; ctx.fill(); }
+      };
+      P.testo = function (t, x, y, c, al, font) { ctx.fillStyle = c || C.ink; ctx.font = font || '700 13px ' + col('--testo'); ctx.textAlign = al || 'left'; ctx.fillText(t, P.X(x), P.Y(y)); ctx.textAlign = 'left'; };
+      P.freccia = function (x1, y1, x2, y2, c, w) { freccia(ctx, P.X(x1), P.Y(y1), P.X(x2), P.Y(y2), c, w); };
+      return P;
+    };
+
+
+    // ---------- verifica automatica delle risposte ----------
+    function aiuto(n, t, dir, o) {
+      var h = t === 1 ? 'Non ci siamo' + (dir ? ': il tuo valore è ' + dir + '.' : '.') : (o.aiuto || 'Rimetti le mani sulla scena e rifai il conto con calma.');
+      return h;
+    }
+    L.verifica = function (n, att, o) {
+      o = o || {}; var tol = o.tol == null ? 0.03 : o.tol;
+      L.azioni['b-' + n] = function () {
+        var vals, ok = false, dir = '';
+        if (o.lista) {
+          vals = lista($('r-' + n).value);
+          if (!vals.length) { L.esito(n, 'Scrivi i valori (anche separati da punto e virgola).', false); return; }
+          var A = att.slice().sort(function (a, b) { return a - b; }), V = vals.slice().sort(function (a, b) { return a - b; });
+          ok = A.length === V.length && A.every(function (a, i) { return Math.abs(a - V[i]) <= Math.max(tol, 1e-9); });
+        } else if (Array.isArray(att)) {
+          vals = att.map(function (a, i) { return num($('r-' + n + (i ? '-' + (i + 1) : '')).value); });
+          if (vals.some(function (v) { return v == null; })) { L.esito(n, 'Riempi tutte le caselle con dei numeri.', false); return; }
+          var bad = [];
+          att.forEach(function (a, i) { var t = (o.tols && o.tols[i] != null) ? o.tols[i] : tol, good = o.abs ? Math.abs(vals[i] - a) <= t : (a === 0 ? Math.abs(vals[i]) <= t : Math.abs(vals[i] - a) <= t * Math.abs(a)); if (!good) bad.push(i + 1); });
+          ok = !bad.length; if (!ok) dir = (o.nomi ? 'sbagliato: ' + bad.map(function (i) { return o.nomi[i - 1]; }).join(', ') : 'sbagliata la casella ' + bad.join(' e '));
+        } else {
+          var v = num($('r-' + n).value); if (v == null) { L.esito(n, 'Scrivi un numero.', false); return; }
+          ok = o.abs ? Math.abs(v - att) <= tol : (att === 0 ? Math.abs(v) <= tol : Math.abs(v - att) <= tol * Math.abs(att));
+          dir = v < att ? 'troppo piccolo' : 'troppo grande';
+        }
+        if (ok) { L.esito(n, o.ok || 'Esatto!', true); if (o.dopo) o.dopo(); L.stella(n); return; }
+        tent[n] = (tent[n] || 0) + 1;
+        var t = tent[n], h = t === 1 ? 'Non ci siamo' + (dir ? ' (' + dir + ').' : '.') : (o.aiuto || 'Rimetti le mani sulla scena e rifai il conto con calma.');
+        if (t >= 2 && o.dir && dir) h += ' Il tuo valore è ' + dir + '.';
+        L.esito(n, h, false);
+      };
+    };
+    L.scelta = function (n, giusta, ok, no, dopo) { scelteDef[n] = { g: giusta, ok: ok, no: no, dopo: dopo }; };
+    L.rispScelta = function (n, i, b) {
+      var d = scelteDef[n]; if (!d) return;
+      if (i === d.g) {
+        b.classList.add('giusta'); L.esito(n, d.ok, true); if (d.dopo) d.dopo(true); L.stella(n);
+      } else {
+        tent[n] = (tent[n] || 0) + 1; L.esito(n, tent[n] > 1 && d.aiuto ? d.aiuto : d.no, false);
+        b.classList.add('sbagliata'); L.risposto = false;
+        [].forEach.call(b.parentNode.children, function (x) { if (!x.classList.contains('sbagliata')) x.disabled = false; });
+        if (d.dopo) d.dopo(false);
+      }
+    };
+
+    // ---------- comandi ----------
+    L.cursore = function (id, f, cb) {
+      fmts[id] = f; var el = $(id);
+      el.addEventListener('input', function () { $('o-' + id).textContent = f(+el.value); if (cb) cb(+el.value); });
+      $('o-' + id).textContent = f(+el.value);
+    };
+    L.imposta = function (id, v) { var el = $(id); el.value = v; $('o-' + id).textContent = fmts[id](+el.value); };
+    L.valore = function (id) { return +$(id).value; };
+    L.blocca = function (ids, b) { [].concat(ids).forEach(function (id) { $(id).disabled = b; var c = $('c-' + id); if (c) c.classList.toggle('bloccato', b); }); };
+    L.tab = function (id, cb) {
+      $(id).addEventListener('click', function (ev) { var b = ev.target.closest('button'); if (!b || b.disabled) return; L.impostaTab(id, b.dataset.v); if (cb) cb(b.dataset.v); });
+    };
+    L.impostaTab = function (id, v) { [].forEach.call($(id).children, function (b) { b.setAttribute('aria-pressed', b.dataset.v === String(v)); }); };
+    L.misure = function (lista) { $('misure').innerHTML = lista.map(function (x) { return '<div><small>' + x[0] + '<\/small><b>' + x[1] + '<\/b><\/div>'; }).join(''); };
+    L.formule = function (html) { $('formule').innerHTML = html; };
+    L.vicino = function (a, b, tol) { return Math.abs(a - b) <= tol; };
+    L.rel = function (a, b, tol) { return Math.abs(a - b) <= tol * Math.abs(b); };
+
+    (function rf() { teli.forEach(function (T) { T.ridisegna(); }); requestAnimationFrame(rf); })();
+    disegnaMissioni();
+    return L;
+  }
+  window.Lab = { init: init, fmt: fmt, bello: bello, num: num };
+})();
+</script>
+<script>
+(function () {
+  'use strict';
+  var L = Lab.init({"chiave": "grafico-moto", "missioni": [{"n": 1, "titolo": "Ricalca il grafico", "testo": "Premi Parti e cambia la velocità per far coincidere la tua linea con quella tratteggiata: fermo per 2 s, poi 1 m/s per 4 s, poi indietro a 2 m/s per 2 s. Alla fine premi Controlla.", "corpo": "<div class=\"riga\"><button class=\"btn \" id=\"b-1\">Controlla</button></div>"}, {"n": 2, "titolo": "Quanta strada", "testo": "Un ciclista va a velocità costante di 1,5 m/s per 4,0 s. Quanti metri percorre?", "corpo": "<div class=\"prova\"><input id=\"r-2\" inputmode=\"text\" autocomplete=\"off\" placeholder=\"?\" aria-label=\"risposta 1\"><span class=\"un\">m</span><button class=\"btn\" id=\"b-2\">Verifica</button></div>"}, {"n": 3, "titolo": "L’auto che parte", "testo": "Un’auto parte da ferma e dopo 5,0 s va a 20 m/s (guarda il grafico v–t). Calcola l’accelerazione e lo spazio percorso in quei 5,0 s.", "corpo": "<div class=\"prova\"><input id=\"r-3\" inputmode=\"text\" autocomplete=\"off\" placeholder=\"?\" aria-label=\"risposta 1\" class=\"corto\"><span class=\"un\">m/s²</span><input id=\"r-3-2\" inputmode=\"text\" autocomplete=\"off\" placeholder=\"?\" aria-label=\"risposta 2\" class=\"corto\"><span class=\"un\">m</span><button class=\"btn\" id=\"b-3\">Verifica</button></div>"}], "medaglie": [{"id": "indietro", "nome": "Marcia indietro", "come": "vai a più di 2 m a sinistra dello zero"}, {"id": "ritorno", "nome": "Di nuovo a casa", "come": "arriva a 8 s tornando vicino allo zero dopo esserti allontanato di almeno 3 m"}, {"id": "tutte", "nome": "Regista del moto", "come": "completa le tre missioni"}]});
+  var $ = L.$, fmt = L.fmt, bello = L.bello;
+
+var cosa = 'mov', simt = 0, s = 0, run = false, hist = [], ghost = false, mis = null, cp = {}, finito = false, vForz = null, VEL = 0.7, smax = 0, smin = 0;
+L.dbg = function (c) { return eval(c); };
+function T() { return cosa === 'mov' ? 8 : 5; }
+function R() { return cosa === 'mov' ? { s: [-4, 12], v: [-3, 3] } : { s: [0, 75], v: [0, 30] }; }
+function vf() { return cosa === 'mov' ? (vForz ? vForz(simt) : L.valore('v')) : L.valore('a') * simt; }
+function reset() { simt = 0; s = 0; run = false; hist = [[0, 0, vf()]]; cp = {}; finito = false; smax = 0; smin = 0; aggiorna(); }
+function passo(dt) {
+  if (!run) return; var v = vf(); if (simt + dt > T()) dt = T() - simt;
+  s += v * dt; simt += dt; hist.push([simt, s, vf()]); smax = Math.max(smax, s); smin = Math.min(smin, s);
+  [2, 6, 8].forEach(function (c) { if (cp[c] == null && simt >= c - 1e-9) cp[c] = s; });
+  if (simt >= T() - 1e-9) { simt = T(); run = false; finito = true;
+    if (cosa === 'mov') { if (smin <= -2) L.premia('indietro'); if (smax >= 3 && Math.abs(s) <= 0.5) L.premia('ritorno'); } }
+  aggiorna();
+}
+function set(v) { cosa = v; L.impostaTab('cosa', v); $('ctl-v').hidden = (v !== 'mov'); $('ctl-a').hidden = (v !== 'auto'); reset(); }
+L.tab('cosa', set);
+L.cursore('v', function (x) { return fmt(x, 1) + ' m/s'; }, function () { aggiorna(); });
+L.cursore('a', function (x) { return fmt(x, 1) + ' m/s²'; }, function () { if (!run) reset(); });
+$('go').addEventListener('click', function () { reset(); run = true; });
+$('rst').addEventListener('click', reset);
+L.ciclo(function (dt) { passo(Math.min(dt, 0.1) * VEL); });
+function gr(ctx, C, x0, y0, w, h, a, b, tit, sx) {
+  var X = function (t) { return x0 + w * t / T(); }, Y = function (y) { return y0 + h * (1 - (y - a) / (b - a)); };
+  ctx.fillStyle = C.ink; ctx.textAlign = 'left'; ctx.font = '700 11px ' + getComputedStyle(document.body).fontFamily; ctx.fillText(tit, x0 - 24, y0 - 8);
+  ctx.strokeStyle = C.tenue; ctx.globalAlpha = 0.25; ctx.lineWidth = 1;
+  for (var t = 0; t <= T(); t++) { ctx.beginPath(); ctx.moveTo(X(t), y0); ctx.lineTo(X(t), y0 + h); ctx.stroke(); }
+  ctx.globalAlpha = 1; ctx.strokeStyle = C.ink; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x0, y0 + h); if (a < 0) { ctx.moveTo(x0, Y(0)); ctx.lineTo(x0 + w, Y(0)); } else { ctx.moveTo(x0, y0 + h); ctx.lineTo(x0 + w, y0 + h); } ctx.stroke();
+  ctx.fillStyle = C.tenue; ctx.font = '600 10px ' + getComputedStyle(document.body).fontFamily; ctx.textAlign = 'right';
+  [a, b].concat(a < 0 ? [0] : []).forEach(function (y) { ctx.fillText(fmt(y, 0), x0 - 3, Y(y) + 3); });
+  ctx.textAlign = 'center'; ctx.fillText('t (s)', x0 + w / 2, y0 + h + 14); ctx.fillText(fmt(T(), 0), x0 + w, y0 + h + 14); ctx.textAlign = 'left';
+  return { X: X, Y: Y, x0: x0, y0: y0, w: w, h: h };
+}
+function linea(ctx, g, pts, col, lw, dash) { ctx.save(); ctx.beginPath(); ctx.rect(g.x0, g.y0, g.w, g.h); ctx.clip(); ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.setLineDash(dash || []); ctx.beginPath(); pts.forEach(function (p, i) { if (i) ctx.lineTo(g.X(p[0]), g.Y(p[1])); else ctx.moveTo(g.X(p[0]), g.Y(p[1])); }); ctx.stroke(); ctx.restore(); }
+L.tela('tela', function (ctx, W, H, C) {
+  var r = R(), lo = r.s[0], hi = r.s[1], tx = function (x) { return 16 + (Math.max(lo, Math.min(hi, x)) - lo) / (hi - lo) * (W - 32); }, by = 56;
+  ctx.fillStyle = C.carta; ctx.fillRect(0, 0, W, 84); ctx.strokeStyle = C.ink; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(16, by); ctx.lineTo(W - 16, by); ctx.stroke();
+  ctx.fillStyle = C.tenue; ctx.font = '600 10px ' + getComputedStyle(document.body).fontFamily; ctx.textAlign = 'center';
+  var pas = cosa === 'mov' ? 2 : 15; for (var k = Math.ceil(lo / pas) * pas; k <= hi; k += pas) { ctx.strokeStyle = C.ink; ctx.beginPath(); ctx.moveTo(tx(k), by - 4); ctx.lineTo(tx(k), by + 4); ctx.stroke(); ctx.fillText(k, tx(k), by + 16); }
+  ctx.fillText('m', W - 8, by + 16); ctx.textAlign = 'left';
+  var px = tx(s);
+  if (cosa === 'mov') { ctx.fillStyle = C.acc; ctx.beginPath(); ctx.arc(px, by - 30, 7, 0, 7); ctx.fill(); ctx.strokeStyle = C.acc; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(px, by - 23); ctx.lineTo(px, by - 9); ctx.moveTo(px - 7, by - 18); ctx.lineTo(px + 7, by - 18); ctx.moveTo(px, by - 9); ctx.lineTo(px - 6, by); ctx.moveTo(px, by - 9); ctx.lineTo(px + 6, by); ctx.stroke(); }
+  else { ctx.fillStyle = C.rosso; ctx.fillRect(px - 20, by - 22, 34, 12); ctx.fillRect(px - 10, by - 30, 18, 9); ctx.fillStyle = C.ink; ctx.beginPath(); ctx.arc(px - 12, by - 8, 5, 0, 7); ctx.arc(px + 8, by - 8, 5, 0, 7); ctx.fill(); }
+  var gy = 112, gh = H - gy - 36, w2 = (W - 72) / 2, gs = gr(ctx, C, 34, gy, w2, gh, r.s[0], r.s[1], 's (m) – t (s)'), gv = gr(ctx, C, W / 2 + 22, gy, w2, gh, r.v[0], r.v[1], 'v (m/s) – t (s)');
+  if (ghost) { linea(ctx, gs, [[0, 0], [2, 0], [6, 4], [8, 0]], C.arancio, 3, [6, 4]); linea(ctx, gv, [[0, 0], [2, 0], [2, 1], [6, 1], [6, -2], [8, -2]], C.arancio, 3, [6, 4]); }
+  if (cosa === 'auto') { ctx.save(); ctx.fillStyle = C.acc; ctx.globalAlpha = 0.25; ctx.beginPath(); ctx.moveTo(gv.X(0), gv.Y(0)); hist.forEach(function (p) { ctx.lineTo(gv.X(p[0]), gv.Y(p[2])); }); ctx.lineTo(gv.X(simt), gv.Y(0)); ctx.closePath(); ctx.fill(); ctx.restore(); }
+  linea(ctx, gs, hist.map(function (p) { return [p[0], p[1]]; }), C.acc, 3); linea(ctx, gv, hist.map(function (p) { return [p[0], p[2]]; }), C.rosso, 3);
+  ctx.fillStyle = C.acc; ctx.beginPath(); ctx.arc(gs.X(simt), gs.Y(Math.max(r.s[0], Math.min(r.s[1], s))), 4, 0, 7); ctx.fill(); ctx.fillStyle = C.rosso; ctx.beginPath(); ctx.arc(gv.X(simt), gv.Y(vf()), 4, 0, 7); ctx.fill();
+  if (cosa === 'auto' && mis === 3) { ctx.fillStyle = C.ink; ctx.font = '700 10px ' + getComputedStyle(document.body).fontFamily; ctx.fillText('20 m/s a 5 s', gv.X(5) - 62, gv.Y(20) - 6); }
+  ctx.fillStyle = C.tenue; ctx.font = '600 11px ' + getComputedStyle(document.body).fontFamily; ctx.textAlign = 'left'; ctx.fillText('t = ' + fmt(simt, 1) + ' s', 16, 18);
+});
+function aggiorna() {
+  var v = vf(), m = [['Tempo', fmt(simt, 1) + ' s'], ['Posizione', fmt(s, 1) + ' m'], ['Velocità', fmt(v, 1) + ' m/s']]; if (cosa === 'auto') m.push(['Accelerazione', fmt(L.valore('a'), 1) + ' m/s²']);
+  L.misure(m);
+  L.formule(cosa === 'mov' ? '<p>Velocità costante: s = v · t.</p><p>Nel grafico s–t la pendenza della linea è la velocità. Pendenza negativa = si va indietro.</p>' : '<p>a = Δv / Δt  (variazione di velocità diviso tempo).</p><p>Spazio = area sotto il grafico v–t = ½ · a · t² (partendo da fermi).</p>');
+}
+L.onMissione = function (n) {
+  mis = n; ghost = (n === 1); vForz = null; L.blocca(['a'], false); L.blocca(['v'], false);
+  if (n === 3) { set('auto'); L.imposta('a', 4); L.blocca(['a'], true); reset(); }
+  else if (n === 1 || n === 2) { set('mov'); L.imposta('v', 0); reset(); }
+};
+L.azioni['b-1'] = function () {
+  if (!finito) { L.esito(1, 'Premi Parti e ricalca il grafico fino a 8 s, poi premi Controlla.', false); return; }
+  var att = { 2: 0, 6: 4, 8: 0 }, bad = [];
+  [2, 6, 8].forEach(function (c) { if (Math.abs((cp[c] == null ? 99 : cp[c]) - att[c]) > 1.0) bad.push('a ' + c + ' s dovresti essere a ' + fmt(att[c], 0) + ' m e sei a ' + fmt(cp[c], 1) + ' m'); });
+  if (!bad.length) { L.esito(1, 'Bravo: la tua linea segue il tratteggio. Dove la velocità è 0 la linea s–t è piatta, dove è positiva sale, dove è negativa scende.', true); L.stella(1); }
+  else L.esito(1, 'Non ancora: ' + bad.join('; ') + '. Premi Da capo e riprova: aspetta il momento giusto prima di cambiare la velocità.', false);
+};
+L.verifica(2, 6, { tol: 0.02, aiuto: 'Con velocità costante lo spazio è velocità per tempo: s = v · t.', ok: 'Esatto: 1,5 · 4,0 = 6,0 m. Controlla: imposta 1,5 m/s e guarda la posizione a 4 s.' });
+L.verifica(3, [4, 50], { tol: 0.02, nomi: ['accelerazione', 'spazio'], aiuto: 'a = Δv / Δt = 20 / 5. Lo spazio è l’area del triangolo sotto la linea v–t: base · altezza / 2.', ok: 'Esatto: a = 20/5,0 = 4,0 m/s² e s = ½ · 5,0 · 20 = 50 m (area del triangolo azzurro).', dopo: function () { L.blocca(['a'], false); } });
+reset();
+
+})();
+</script>
+</body>
+</html>
